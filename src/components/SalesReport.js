@@ -32,12 +32,20 @@ const SalesReport = ({ channels, query, onRetry }) => {
         channels={channels}
         revenueByCurrency={revenueByCurrency}
         onSelect={setSelected}
+        selectedKey={selected?.key}
+        panel={
+          selected && (
+            <SupplierPanel
+              key={selected.key}
+              channel={selected}
+              query={query}
+              onClose={close}
+            />
+          )
+        }
       />
       <SectionHead title="Share by channel" />
       <ChannelPie channels={channels} />
-      {selected && (
-        <SupplierPanel channel={selected} query={query} onClose={close} />
-      )}
     </>
   );
 };

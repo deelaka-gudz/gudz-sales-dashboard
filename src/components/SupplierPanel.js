@@ -104,64 +104,58 @@ const SupplierPanel = ({ channel, query, onClose }) => {
   const { data, error, loading, retry } = useSupplierSales(channel.key, query);
   const [view, setView] = React.useState("suppliers");
 
+  const ref = React.useRef(null);
+
+  // Bring the expanded panel into view when a channel is chosen.
   React.useEffect(() => {
-    const onKey = (event) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [channel.key]);
 
   return (
-    <div
-      className="overlay"
-      role="presentation"
-      onClick={(event) => event.target === event.currentTarget && onClose()}
+    <section
+      ref={ref}
+      className="panel card"
+      aria-label={`${channel.label} sales by ${VIEWS[view].noun}`}
+      style={{ "--channel": CHANNEL_COLORS[channel.key] }}
     >
-      <div
-        className="panel card"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`${channel.label} sales by ${VIEWS[view].noun}`}
-        style={{ "--channel": CHANNEL_COLORS[channel.key] }}
-      >
-        <div className="panel-head">
-          <div className="channel-name">
-            <ChannelLogo channelKey={channel.key} label={channel.label} />
-            {channel.label} by {VIEWS[view].noun}
-          </div>
-          <button type="button" className="panel-close" onClick={onClose}>
-            Close
-          </button>
+      <div className="panel-head">
+        <div className="channel-name">
+          <ChannelLogo channelKey={channel.key} label={channel.label} />
+          {channel.label} by {VIEWS[view].noun}
         </div>
-        <div className="segmented panel-toggle">
-          {Object.entries(VIEWS).map(([key, { button }]) => (
-            <button
-              key={key}
-              type="button"
-              className={key === view ? "active" : ""}
-              onClick={() => setView(key)}
-            >
-              {button}
-            </button>
-          ))}
-        </div>
-        {loading && (
-          <div className="panel-loading">Loading supplier sales...</div>
-        )}
-        {error && (
-          <Notice error onRetry={retry}>
-            Failed to load: {error}
-          </Notice>
-        )}
-        {data && <SupplierSections data={data} view={view} />}
-        <p className="panel-note">
-          Units are the quantity sold times the pack size (the "Unit Count" in
-          ChannelAdvisor). Orders count each order once per row, so rows can add
-          up to more than the channel total. Revenue is the item price, so it
-          leaves out postage and won't match the channel total. Suppliers and
-          brands come from ChannelAdvisor; only Holland &amp; Barrett uses Helm.
-        </p>
+        <button type="button" className="panel-close" onClick={onClose}>
+          Close
+        </button>
       </div>
-    </div>
+      <div className="segmented panel-toggle">
+        {Object.entries(VIEWS).map(([key, { button }]) => (
+          <button
+            key={key}
+            type="button"
+            className={key === view ? "active" : ""}
+            onClick={() => setView(key)}
+          >
+            {button}
+          </button>
+        ))}
+      </div>
+      {loading && (
+        <div className="panel-loading">Loading supplier sales...</div>
+      )}
+      {error && (
+        <Notice error onRetry={retry}>
+          Failed to load: {error}
+        </Notice>
+      )}
+      {data && <SupplierSections data={data} view={view} />}
+      <p className="panel-note">
+        Units are the quantity sold times the pack size (the "Unit Count" in
+        ChannelAdvisor). Orders count each order once per row, so rows can add
+        up to more than the channel total. Revenue is the item price, so it
+        leaves out postage and won't match the channel total. Suppliers and
+        brands come from ChannelAdvisor; only Holland &amp; Barrett uses Helm.
+      </p>
+    </section>
   );
 };
 

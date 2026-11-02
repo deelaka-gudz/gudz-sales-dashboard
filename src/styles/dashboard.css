@@ -451,23 +451,11 @@ body {
   margin-top: 20px;
 }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 48px 16px;
-  overflow-y: auto;
-  background: rgba(0, 0, 0, 0.5);
-}
-
 .panel {
   position: relative;
   overflow: hidden;
-  width: 100%;
-  max-width: 720px;
+  grid-column: 1 / -1;
+  scroll-margin-top: 16px;
 }
 
 .panel::before {
