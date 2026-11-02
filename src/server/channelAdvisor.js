@@ -43,28 +43,36 @@ async function getAccessToken(creds, { force = false } = {}) {
   return body.access_token;
 }
 
-function ordersUrl(creds, filter, skip) {
+const ORDER_FIELDS =
+  "SiteName,TotalPrice,CheckoutDateUtc,DistributionCenterTypeRollup";
+
+function ordersUrl(creds, filter, skip, withItems) {
   const url = new URL(ORDERS_URL);
   const params = {
     $filter: filter,
-    $select: "SiteName,TotalPrice,CheckoutDateUtc,DistributionCenterTypeRollup",
+    $select: ORDER_FIELDS,
     $top: String(PAGE_SIZE),
     $skip: String(skip),
     profileid: creds.profileId,
   };
+  if (withItems) params.$expand = "Items($select=Sku,Quantity,UnitPrice)";
   // $count slows a request down, so only the first page asks for it.
   if (skip === 0) params.$count = "true";
   url.search = new URLSearchParams(params).toString();
   return url;
 }
 
-export async function fetchChannelAdvisorOrders(creds, filter) {
+export async function fetchChannelAdvisorOrders(
+  creds,
+  filter,
+  { withItems = false } = {},
+) {
   let token = await getAccessToken(creds);
 
   return fetchPaged(async (skip) => {
     const call = () =>
       requestJson(
-        ordersUrl(creds, filter, skip),
+        ordersUrl(creds, filter, skip, withItems),
         { headers: { Authorization: `Bearer ${token}` } },
         "ChannelAdvisor orders request",
       );

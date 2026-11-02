@@ -42,6 +42,15 @@ export const CHANNELS = [
 // as "ExternallyManaged"; everything else is fulfilled by Gudz.
 export const FBA_ROLLUP_TYPE = "ExternallyManaged";
 
+// Whether a ChannelAdvisor order belongs to this channel.
+export const channelOwnsOrder = (channel, order) => {
+  const isFba = order.DistributionCenterTypeRollup === FBA_ROLLUP_TYPE;
+  return (
+    channel.siteName === order.SiteName &&
+    (!channel.fulfilment || (channel.fulfilment === "fba") === isFba)
+  );
+};
+
 export const MIRAKL_CHANNELS = [
   { key: "tesco", label: "Tesco", currency: "GBP" },
   { key: "superdrug", label: "Superdrug", currency: "GBP" },

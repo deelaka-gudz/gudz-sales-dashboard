@@ -24,24 +24,41 @@ const ChannelStats = ({ channel, currencyTotal }) => {
   );
 };
 
-const ChannelCard = ({ channel, currencyTotal }) => (
-  <div
-    className="card channel"
-    style={{ "--channel": CHANNEL_COLORS[channel.key] }}
-  >
-    <div className="channel-name">
-      <ChannelLogo channelKey={channel.key} label={channel.label} />
-      {channel.label}
-    </div>
-    {channel.error ? (
-      <div className="channel-error" title={channel.error}>
-        <strong>Unavailable</strong>
-        <span>{channel.error}</span>
+const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
+  const clickable = !channel.error && onSelect;
+  const onKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect(channel);
+    }
+  };
+  return (
+    <div
+      className={`card channel${clickable ? " clickable" : ""}`}
+      style={{ "--channel": CHANNEL_COLORS[channel.key] }}
+      {...(clickable && {
+        role: "button",
+        tabIndex: 0,
+        onClick: () => onSelect(channel),
+        onKeyDown,
+        "aria-label": `${channel.label}: view sales by supplier`,
+      })}
+    >
+      <div className="channel-name">
+        <ChannelLogo channelKey={channel.key} label={channel.label} />
+        {channel.label}
       </div>
-    ) : (
-      <ChannelStats channel={channel} currencyTotal={currencyTotal} />
-    )}
-  </div>
-);
+      {channel.error ? (
+        <div className="channel-error" title={channel.error}>
+          <strong>Unavailable</strong>
+          <span>{channel.error}</span>
+        </div>
+      ) : (
+        <ChannelStats channel={channel} currencyTotal={currencyTotal} />
+      )}
+      {clickable && <div className="channel-more">View suppliers &rarr;</div>}
+    </div>
+  );
+};
 
 export default ChannelCard;

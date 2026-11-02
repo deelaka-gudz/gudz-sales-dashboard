@@ -4,10 +4,13 @@ import ChannelPie from "./ChannelPie";
 import KpiCards from "./KpiCards";
 import Notice from "./Notice";
 import SectionHead from "./SectionHead";
+import SupplierPanel from "./SupplierPanel";
 import { summarize } from "../utils/sales";
 
-const SalesReport = ({ channels, onRetry }) => {
+const SalesReport = ({ channels, query, onRetry }) => {
   const { totalOrders, revenueByCurrency, failed } = summarize(channels);
+  const [selected, setSelected] = React.useState(null);
+  const close = React.useCallback(() => setSelected(null), []);
   return (
     <>
       {failed.length > 0 && (
@@ -22,9 +25,16 @@ const SalesReport = ({ channels, onRetry }) => {
         revenueByCurrency={revenueByCurrency}
       />
       <SectionHead title="By channel" />
-      <ChannelGrid channels={channels} revenueByCurrency={revenueByCurrency} />
+      <ChannelGrid
+        channels={channels}
+        revenueByCurrency={revenueByCurrency}
+        onSelect={setSelected}
+      />
       <SectionHead title="Share by channel" />
       <ChannelPie channels={channels} />
+      {selected && (
+        <SupplierPanel channel={selected} query={query} onClose={close} />
+      )}
     </>
   );
 };

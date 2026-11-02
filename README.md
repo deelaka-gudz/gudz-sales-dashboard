@@ -16,7 +16,8 @@ credentials ever reach the page.
 3. **Counts per day and per channel**: each order is placed on its London calendar day, and a channel's revenue is added up in its own currency (Amazon Ireland is EUR, the rest GBP). The KPI cards at the top total the orders and the GBP revenue.
 4. **Caches finished days**: Yesterday and older days are saved per day, in memory and in `.sales-cache/days.json`, so Last 30 days only fetches the days it hasn't seen. Today is always live. Add `?refresh=1` to the API call to bypass the cache.
 5. **Shows a card per channel** with its logo, orders, revenue and share of the total, then a **Share by channel** donut chart (switch between Orders and Revenue; Amazon Ireland is left out of the revenue view because it's in EUR).
-6. **Keeps one channel's failure from hiding the rest**: a channel that errors shows the error on its own card and is left out of the totals, and the other channels still load. Missing credentials are reported by name, in one message.
+6. **Breaks a channel down by supplier**: click a channel card to open its sales by supplier (units, revenue and share). Each order line's SKU is looked up in Helm and credited to the item's primary supplier. A bundle SKU has no supplier of its own, so it is credited to the single items it is made of, and its units are the quantity sold times the pack quantity (the quantity on the bundle's link in Helm). SKUs Helm doesn't know are shown as "SKU not in Helm", and items without a supplier as "No supplier set". Revenue here is the item price, so it leaves out postage and won't match the channel total.
+7. **Keeps one channel's failure from hiding the rest**: a channel that errors shows the error on its own card and is left out of the totals, and the other channels still load. Missing credentials are reported by name, in one message.
 
 ## Usage
 
@@ -72,9 +73,20 @@ Returns `{ from, to, channels: [{ key, label, currency, orderCount, revenue, err
 An unknown range, a bad date or a range that ends before it starts returns a
 400 with a message.
 
+```text
+GET /api/supplier-sales?channel=amazon_uk&range=yesterday
+GET /api/supplier-sales?channel=tesco&from=YYYY-MM-DD&to=YYYY-MM-DD
+```
+
+Returns `{ channel, label, currency, from, to, suppliers: [{ name, units, revenue, lines }] }`,
+largest revenue first. It takes the same range parameters as `today-sales`.
+Helm limits how fast it can be called, so the first request for a lot of new
+SKUs can take a while; looked-up SKUs are remembered for an hour.
+
 ## Layout
 
 - `src/api/today-sales.js`: the Gatsby Function. Reads the credentials, validates the range and returns the per-channel numbers. Every file in `src/api/` becomes an endpoint, so helpers live in `src/server/` instead.
+- `src/api/supplier-sales.js`: the Gatsby Function behind the supplier breakdown. `src/server/supplierSales.js` reads a channel's order lines and `src/server/suppliers.js` looks the SKUs up in Helm.
 - `src/server/sales.js`: works out which days are missing from the cache, fetches them from every channel at once, and totals them.
 - `src/server/channels.js`: the channel list (keys, labels, currencies, ChannelAdvisor site names).
 - `src/server/channelAdvisor.js`, `mirakl.js`, `helm.js`: one client per source.
@@ -82,7 +94,7 @@ An unknown range, a bad date or a range that ends before it starts returns a
 - `src/server/dates.js`, `cache.js`: London-day helpers and the per-day cache.
 - `src/pages/index.js`: the page. Holds the selected range and loads the data.
 - `src/hooks/useSales.js`: fetches the API, with loading, error and retry.
-- `src/components/`: `Header` (range buttons), `DatePicker`, `RangeForm`, `KpiCards`, `ChannelGrid`, `ChannelCard`, `ChannelLogo`, `ChannelPie`, `SalesReport`, `SkeletonGrid`, `Notice`, `SectionHead`.
+- `src/components/`: `Header` (range buttons), `DatePicker`, `RangeForm`, `KpiCards`, `ChannelGrid`, `ChannelCard`, `ChannelLogo`, `ChannelPie`, `SupplierPanel`, `SalesReport`, `SkeletonGrid`, `Notice`, `SectionHead`.
 - `src/constants/`: the range titles, channel colours (`dashboard.js`) and logo map (`channelLogos.js`). A channel's colour is fixed to the channel, so it doesn't change when the others are filtered.
 - `src/images/channels/`: the channel logos. A channel without one (Superdrug) shows a lettered badge.
 - `src/styles/dashboard.css`: all the styles, with light and dark themes.

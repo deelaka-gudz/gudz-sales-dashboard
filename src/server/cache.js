@@ -5,6 +5,12 @@ export const CACHE_MIN_AGE_DAYS = 1;
 
 const CACHE_FILE = path.join(process.cwd(), ".sales-cache", "days.json");
 
+const SKU_CACHE_FILE = path.join(
+  process.cwd(),
+  ".sales-cache",
+  "suppliers.json",
+);
+
 let dayCache = null;
 
 export const isEntry = (entry) =>
@@ -31,13 +37,39 @@ export function loadDayCache() {
   return dayCache;
 }
 
-export function saveDayCache() {
+function writeCacheFile(file, value) {
   try {
-    fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
-    const temp = `${CACHE_FILE}.tmp`;
-    fs.writeFileSync(temp, JSON.stringify(dayCache));
-    fs.renameSync(temp, CACHE_FILE);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const temp = `${file}.tmp`;
+    fs.writeFileSync(temp, JSON.stringify(value));
+    fs.renameSync(temp, file);
   } catch {
     // The cache is best-effort; the in-memory copy still works.
   }
+}
+
+export function saveDayCache() {
+  writeCacheFile(CACHE_FILE, dayCache);
+}
+
+// SKU -> supplier lookups from Helm, kept on disk because they are slow to
+// fetch and Gatsby can reload the function between requests.
+let skuCache = null;
+
+export function loadSkuCache() {
+  if (!skuCache) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(SKU_CACHE_FILE, "utf8"));
+      const valid =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed);
+      skuCache = valid ? parsed : {};
+    } catch {
+      skuCache = {};
+    }
+  }
+  return skuCache;
+}
+
+export function saveSkuCache() {
+  writeCacheFile(SKU_CACHE_FILE, skuCache);
 }

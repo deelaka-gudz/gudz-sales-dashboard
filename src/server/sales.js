@@ -1,7 +1,7 @@
 import {
   ALL_CHANNELS,
   CHANNELS,
-  FBA_ROLLUP_TYPE,
+  channelOwnsOrder,
   HELM_CHANNEL,
   HELM_IGNORED_STATUS,
   MIRAKL_CHANNELS,
@@ -89,12 +89,7 @@ async function loadChannelAdvisor({
 
   const orders = await fetchChannelAdvisorOrders(creds, filter);
   for (const order of orders) {
-    const isFba = order.DistributionCenterTypeRollup === FBA_ROLLUP_TYPE;
-    const channel = channels.find(
-      (c) =>
-        c.siteName === order.SiteName &&
-        (!c.fulfilment || (c.fulfilment === "fba") === isFba),
-    );
+    const channel = channels.find((c) => channelOwnsOrder(c, order));
     if (channel) record(channel.key, order.CheckoutDateUtc, order.TotalPrice);
   }
 }

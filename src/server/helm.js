@@ -7,7 +7,15 @@ const ORDER_TAG = "H&B Order";
 // Helm's date range excludes its last day, so callers pass the day after.
 const ukDate = (day) => day.split("-").reverse().join("/");
 
-async function login(baseUrl, email, password) {
+export function helmRoot(baseUrl) {
+  try {
+    return new URL(baseUrl).href.replace(/\/$/, "");
+  } catch {
+    throw new Error("Holland & Barrett base URL is not a valid URL");
+  }
+}
+
+export async function login(baseUrl, email, password) {
   const body = await requestJson(
     `${baseUrl}/auth/login`,
     {
@@ -26,12 +34,7 @@ async function login(baseUrl, email, password) {
 }
 
 export async function fetchHelmOrders({ baseUrl, email, password }, from, to) {
-  let root;
-  try {
-    root = new URL(baseUrl).href.replace(/\/$/, "");
-  } catch {
-    throw new Error("Holland & Barrett base URL is not a valid URL");
-  }
+  const root = helmRoot(baseUrl);
   const token = await login(root, email, password);
 
   return fetchPaged(async (offset) => {

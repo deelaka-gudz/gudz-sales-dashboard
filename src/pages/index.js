@@ -21,9 +21,8 @@ const IndexPage = () => {
   const [range, setRange] = React.useState("today");
   const [custom, setCustom] = React.useState(null);
   const [date, setDate] = React.useState("");
-  const { data, error, loading, retry } = useSales(
-    buildQuery(range, custom, date),
-  );
+  const query = buildQuery(range, custom, date);
+  const { data, error, loading, retry } = useSales(query);
 
   return (
     <main className="dash">
@@ -48,7 +47,9 @@ const IndexPage = () => {
         <Notice>Pick a start and end date, then press Apply.</Notice>
       )}
       {loading && <SkeletonGrid />}
-      {data && <SalesReport channels={data.channels} onRetry={retry} />}
+      {data && (
+        <SalesReport channels={data.channels} query={query} onRetry={retry} />
+      )}
     </main>
   );
 };

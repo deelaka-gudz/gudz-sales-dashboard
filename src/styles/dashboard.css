@@ -367,6 +367,129 @@ body {
   font-size: 18px;
 }
 
+.channel.clickable {
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.channel.clickable:hover,
+.channel.clickable:focus-visible {
+  transform: translateY(-2px);
+  outline: 2px solid var(--channel, var(--accent));
+  outline-offset: 2px;
+}
+
+.channel-more {
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--channel, var(--accent));
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 720px;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--channel, var(--accent));
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-close {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.panel-loading {
+  padding: 24px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.panel-note {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.supplier-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.supplier-table th,
+.supplier-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.supplier-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.supplier-table .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.supplier-table tfoot td {
+  font-weight: 700;
+  border-bottom: 0;
+}
+
+.supplier-name {
+  font-weight: 600;
+}
+
+.supplier-table .share {
+  margin-top: 6px;
+  height: 4px;
+}
+
 @media (max-width: 600px) {
   .dash {
     padding: 24px 16px 48px;
