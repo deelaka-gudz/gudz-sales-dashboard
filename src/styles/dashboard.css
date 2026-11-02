@@ -442,7 +442,7 @@ body {
 }
 
 .panel-section:first-of-type h3 {
-  margin-top: 0;
+  margin-top: 20px;
 }
 
 .overlay {
@@ -689,8 +689,33 @@ body {
 }
 
 .panel-section .channel-best {
-  margin: 0 0 8px;
-  padding-bottom: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0 20px;
   border-top: 0;
-  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.panel-section .channel-best-row {
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid #f5b301;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(245, 179, 1, 0.14), var(--surface));
+  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.35);
+}
+
+.panel-section .channel-best-label {
+  color: #f5b301;
+  font-weight: 600;
+}
+
+.panel-section .channel-best-value {
+  font-size: 14px;
+}
+
+.channel-best-meta {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }

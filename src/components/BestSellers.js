@@ -43,8 +43,13 @@ export const ChannelBest = ({ best, status }) => (
       <div key={label} className="channel-best-row">
         <span className="channel-best-label">{label}</span>
         <span className="channel-best-value" title={item?.title}>
-          {item ? `${item.name} (${detail(item)})` : statusText(status, best)}
+          {item ? item.title || item.name : statusText(status, best)}
         </span>
+        {item && (
+          <span className="channel-best-meta">
+            {item.name} · {detail(item)}
+          </span>
+        )}
       </div>
     ))}
   </div>

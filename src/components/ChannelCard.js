@@ -1,5 +1,4 @@
 import * as React from "react";
-import { ChannelBest } from "./BestSellers";
 import ChannelLogo from "./ChannelLogo";
 import { CHANNEL_COLORS } from "../constants/dashboard";
 import { count, money } from "../utils/format";
@@ -39,7 +38,7 @@ const ChannelParts = ({ parts }) => (
   </div>
 );
 
-const ChannelCard = ({ channel, currencyTotal, best, onSelect }) => {
+const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
   const clickable = !channel.error && onSelect;
   const onKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -73,9 +72,6 @@ const ChannelCard = ({ channel, currencyTotal, best, onSelect }) => {
       )}
       {!channel.error && channel.parts && (
         <ChannelParts parts={channel.parts} />
-      )}
-      {!channel.error && (
-        <ChannelBest best={best.data?.channels[channel.key]} status={best} />
       )}
     </div>
   );

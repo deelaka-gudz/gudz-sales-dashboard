@@ -31,7 +31,6 @@ const SalesReport = ({ channels, query, onRetry }) => {
       <ChannelGrid
         channels={channels}
         revenueByCurrency={revenueByCurrency}
-        best={best}
         onSelect={setSelected}
       />
       <SectionHead title="Share by channel" />
