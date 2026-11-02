@@ -32,3 +32,6 @@ export function readCredentials() {
     },
   };
 }
+
+export const hasHelmCredentials = ({ helm }) =>
+  Boolean(helm.baseUrl && helm.email && helm.password);

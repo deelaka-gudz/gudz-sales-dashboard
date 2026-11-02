@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ChannelBest } from "./BestSellers";
 import ChannelLogo from "./ChannelLogo";
 import Notice from "./Notice";
 import { CHANNEL_COLORS } from "../constants/dashboard";
@@ -23,6 +24,7 @@ const SupplierTable = ({ suppliers, currency, heading }) => {
           <tr>
             <th>{heading}</th>
             <th className="num">Units</th>
+            <th className="num">Orders</th>
             <th className="num">Revenue</th>
             <th className="num">Share</th>
           </tr>
@@ -39,6 +41,7 @@ const SupplierTable = ({ suppliers, currency, heading }) => {
                   </div>
                 </td>
                 <td className="num">{count(supplier.units)}</td>
+                <td className="num">{count(supplier.orders)}</td>
                 <td className="num">{money(supplier.revenue, currency)}</td>
                 <td className="num">{share.toFixed(1)}%</td>
               </tr>
@@ -49,6 +52,7 @@ const SupplierTable = ({ suppliers, currency, heading }) => {
           <tr>
             <td>Total</td>
             <td className="num">{count(totalUnits)}</td>
+            <td />
             <td className="num">{money(total, currency)}</td>
           </tr>
         </tfoot>
@@ -61,6 +65,7 @@ const SupplierSections = ({ data, view }) =>
   data.sections.map((section) => (
     <section key={section.label || "all"} className="panel-section">
       {section.label && <h3>{section.label}</h3>}
+      <ChannelBest best={section} status={{}} />
       <SupplierTable
         suppliers={section[view]}
         currency={data.currency}
@@ -123,10 +128,12 @@ const SupplierPanel = ({ channel, query, onClose }) => {
         )}
         {data && <SupplierSections data={data} view={view} />}
         <p className="panel-note">
-          Units are the quantity sold times the pack quantity of bundles.
-          Revenue is the item price, so it leaves out postage and won't match
-          the channel total. Suppliers come from Helm and manufacturers from
-          ChannelAdvisor.
+          Units are the quantity sold times the pack size (the "Unit Count" in
+          ChannelAdvisor). Orders count each order once per row, so rows can add
+          up to more than the channel total. Revenue is the item price, so it
+          leaves out postage and won't match the channel total. Suppliers and
+          manufacturers come from ChannelAdvisor; only Holland &amp; Barrett
+          uses Helm.
         </p>
       </div>
     </div>

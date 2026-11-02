@@ -74,30 +74,58 @@ export function saveSkuCache() {
   writeCacheFile(SKU_CACHE_FILE, skuCache);
 }
 
-// SKU -> manufacturer lookups from ChannelAdvisor, kept for the same reasons.
-const MANUFACTURER_CACHE_FILE = path.join(
+// SKU -> catalogue details (manufacturer, supplier, pack size) from
+// ChannelAdvisor, kept for the same reasons.
+const CATALOGUE_CACHE_FILE = path.join(
   process.cwd(),
   ".sales-cache",
-  "manufacturers.json",
+  "catalogue.json",
 );
-let manufacturerCache = null;
+let catalogueCache = null;
 
-export function loadManufacturerCache() {
-  if (!manufacturerCache) {
+export function loadCatalogueCache() {
+  if (!catalogueCache) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(CATALOGUE_CACHE_FILE, "utf8"));
+      const valid =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed);
+      catalogueCache = valid ? parsed : {};
+    } catch {
+      catalogueCache = {};
+    }
+  }
+  return catalogueCache;
+}
+
+export function saveCatalogueCache() {
+  writeCacheFile(CATALOGUE_CACHE_FILE, catalogueCache);
+}
+
+// Per-day best seller totals for each channel. Days that are over never
+// change, so each is worked out once.
+const BEST_SELLER_CACHE_FILE = path.join(
+  process.cwd(),
+  ".sales-cache",
+  "bestsellers.json",
+);
+let bestSellerCache = null;
+
+export function loadBestSellerCache() {
+  if (!bestSellerCache) {
     try {
       const parsed = JSON.parse(
-        fs.readFileSync(MANUFACTURER_CACHE_FILE, "utf8"),
+        fs.readFileSync(BEST_SELLER_CACHE_FILE, "utf8"),
       );
       const valid =
         parsed && typeof parsed === "object" && !Array.isArray(parsed);
-      manufacturerCache = valid ? parsed : {};
+      bestSellerCache = valid ? parsed : {};
     } catch {
-      manufacturerCache = {};
+      bestSellerCache = {};
     }
   }
-  return manufacturerCache;
+  return bestSellerCache;
 }
 
-export function saveManufacturerCache() {
-  writeCacheFile(MANUFACTURER_CACHE_FILE, manufacturerCache);
+export function saveBestSellerCache() {
+  writeCacheFile(BEST_SELLER_CACHE_FILE, bestSellerCache);
 }

@@ -44,7 +44,7 @@ async function getAccessToken(creds, { force = false } = {}) {
 }
 
 const ORDER_FIELDS =
-  "SiteName,TotalPrice,CheckoutDateUtc,DistributionCenterTypeRollup";
+  "ID,SiteName,TotalPrice,CheckoutDateUtc,DistributionCenterTypeRollup";
 
 function ordersUrl(creds, filter, skip, withItems) {
   const url = new URL(ORDERS_URL);
@@ -55,7 +55,7 @@ function ordersUrl(creds, filter, skip, withItems) {
     $skip: String(skip),
     profileid: creds.profileId,
   };
-  if (withItems) params.$expand = "Items($select=Sku,Quantity,UnitPrice)";
+  if (withItems) params.$expand = "Items($select=Sku,Title,Quantity,UnitPrice)";
   // $count slows a request down, so only the first page asks for it.
   if (skip === 0) params.$count = "true";
   url.search = new URLSearchParams(params).toString();
@@ -96,6 +96,12 @@ const PRODUCTS_URL = "https://api.channeladvisor.com/v1/Products";
 const PRODUCT_BATCH = 20;
 const PRODUCT_CONCURRENCY = 4;
 
+// Only these catalogue attributes are fetched; a product carries dozens more
+// (descriptions, prices) that would make the response huge.
+const UNIT_COUNT = "Unit Count";
+const OUR_SKU = "Our SKU";
+const ATTRIBUTES_EXPAND = `Attributes($filter=Name eq '${UNIT_COUNT}' or Name eq '${OUR_SKU}';$select=Name,Value)`;
+
 async function fetchProductBatch(creds, skus, token) {
   const filter = skus
     .map((sku) => `Sku eq '${sku.replace(/'/g, "''")}'`)
@@ -103,7 +109,8 @@ async function fetchProductBatch(creds, skus, token) {
   const url = new URL(PRODUCTS_URL);
   url.search = new URLSearchParams({
     $filter: filter,
-    $select: "Sku,Manufacturer",
+    $select: "Sku,Manufacturer,SupplierName",
+    $expand: ATTRIBUTES_EXPAND,
     $top: String(PRODUCT_BATCH * 2),
     profileid: creds.profileId,
   }).toString();
@@ -118,9 +125,15 @@ async function fetchProductBatch(creds, skus, token) {
   return body.value;
 }
 
-// Returns a Map of lower-cased sku -> manufacturer (empty string if unset) for
-// the SKUs that exist in the account's catalogue.
-export async function fetchChannelAdvisorManufacturers(creds, skus) {
+const attribute = (product, name) =>
+  String(
+    (product.Attributes || []).find((a) => a.Name === name)?.Value ?? "",
+  ).trim();
+
+// Returns a Map of lower-cased sku -> { manufacturer, supplier, ourSku,
+// unitCount } for the SKUs that exist in the account's catalogue. Unset text
+// is an empty string; `unitCount` (the pack size) is 1 when unset.
+export async function fetchChannelAdvisorCatalogue(creds, skus) {
   let token = await getAccessToken(creds);
   const batches = [];
   for (let i = 0; i < skus.length; i += PRODUCT_BATCH) {
@@ -137,10 +150,13 @@ export async function fetchChannelAdvisorManufacturers(creds, skus) {
       products = await fetchProductBatch(creds, batch, token);
     }
     for (const product of products) {
-      found.set(
-        String(product.Sku).toLowerCase(),
-        String(product.Manufacturer || "").trim(),
-      );
+      const unitCount = Number(attribute(product, UNIT_COUNT));
+      found.set(String(product.Sku).toLowerCase(), {
+        manufacturer: String(product.Manufacturer || "").trim(),
+        supplier: String(product.SupplierName || "").trim(),
+        ourSku: attribute(product, OUR_SKU),
+        unitCount: unitCount >= 1 ? unitCount : 1,
+      });
     }
   };
   for (let i = 0; i < batches.length; i += PRODUCT_CONCURRENCY) {
