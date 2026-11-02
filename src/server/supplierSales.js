@@ -10,6 +10,7 @@ import { fetchChannelAdvisorOrders } from "./channelAdvisor";
 import { addDays } from "./dates";
 import { fetchHelmOrders } from "./helm";
 import { fetchMiraklOrders } from "./mirakl";
+import { resolveManufacturers } from "./manufacturers";
 import { resolveSuppliers } from "./suppliers";
 
 const number = (value) => {
@@ -98,34 +99,64 @@ export function findChannel(channelKey) {
   );
 }
 
-function totalBySupplier(lines, resolved) {
+// Groups lines by name, ignoring case ("ECOVER" and "Ecover" are one name,
+// shown as the spelling used by most lines). `split(line)` returns the
+// { name, units, revenue } shares of one order line.
+function totalBy(lines, split) {
   const totals = new Map();
   for (const line of lines) {
-    const parts = resolved.get(line.sku);
-    const packs = parts.reduce((sum, part) => sum + part.pack, 0);
-    for (const part of parts) {
-      const entry = totals.get(part.supplier) || {
+    for (const { name, units, revenue } of split(line)) {
+      const key = name.toLowerCase();
+      const entry = totals.get(key) || {
+        spellings: new Map(),
         units: 0,
         revenue: 0,
         lines: 0,
       };
-      entry.units += line.quantity * part.pack;
-      entry.revenue += (line.revenue * part.pack) / packs;
+      entry.spellings.set(name, (entry.spellings.get(name) || 0) + 1);
+      entry.units += units;
+      entry.revenue += revenue;
       entry.lines += 1;
-      totals.set(part.supplier, entry);
+      totals.set(key, entry);
     }
   }
-  return [...totals]
-    .map(([name, { units, revenue, lines: lineCount }]) => ({
-      name,
+  return [...totals.values()]
+    .map(({ spellings, units, revenue, lines: lineCount }) => ({
+      name: [...spellings].sort((x, y) => y[1] - x[1])[0][0],
       units,
       revenue: Math.round(revenue * 100) / 100,
       lines: lineCount,
     }))
-    .sort((a, b) => b.revenue - a.revenue);
+    .sort((x, y) => y.revenue - x.revenue);
 }
 
-// Returns sections of suppliers sorted by revenue: [{ label, suppliers }].
+// A bundle line is shared between its component suppliers by pack quantity.
+const bySupplier = (resolved) => (line) => {
+  const parts = resolved.get(line.sku);
+  const packs = parts.reduce((sum, part) => sum + part.pack, 0);
+  return parts.map((part) => ({
+    name: part.supplier,
+    units: line.quantity * part.pack,
+    revenue: (line.revenue * part.pack) / packs,
+  }));
+};
+
+// The manufacturer is that of the SKU sold; units still count every item in a
+// pack.
+const byManufacturer = (resolved, manufacturers) => (line) => {
+  const packs = resolved
+    .get(line.sku)
+    .reduce((sum, part) => sum + part.pack, 0);
+  return [
+    {
+      name: manufacturers.get(line.sku),
+      units: line.quantity * packs,
+      revenue: line.revenue,
+    },
+  ];
+};
+
+// Returns sections sorted by revenue: [{ label, suppliers, manufacturers }].
 // `units` is quantity sold times the pack quantity, so a line of 2 for a "pack
 // of 6" bundle counts 12 units.
 export async function buildSupplierSales(channelKey, credentials, range) {
@@ -135,12 +166,16 @@ export async function buildSupplierSales(channelKey, credentials, range) {
       lines: lines.filter((line) => line.sku && line.quantity > 0),
     }),
   );
-  const resolved = await resolveSuppliers(
-    credentials.helm,
-    sections.flatMap(({ lines }) => lines.map((line) => line.sku)),
-  );
+  const skus = sections.flatMap(({ lines }) => lines.map((line) => line.sku));
+  const caChannel = CHANNELS.find((c) => (c.group || c.key) === channelKey);
+  const account = caChannel ? caChannel.account : "UK";
+  const [resolved, manufacturers] = await Promise.all([
+    resolveSuppliers(credentials.helm, skus),
+    resolveManufacturers(account, credentials.accounts[account], skus),
+  ]);
   return sections.map(({ label, lines }) => ({
     label,
-    suppliers: totalBySupplier(lines, resolved),
+    suppliers: totalBy(lines, bySupplier(resolved)),
+    manufacturers: totalBy(lines, byManufacturer(resolved, manufacturers)),
   }));
 }

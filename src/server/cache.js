@@ -73,3 +73,31 @@ export function loadSkuCache() {
 export function saveSkuCache() {
   writeCacheFile(SKU_CACHE_FILE, skuCache);
 }
+
+// SKU -> manufacturer lookups from ChannelAdvisor, kept for the same reasons.
+const MANUFACTURER_CACHE_FILE = path.join(
+  process.cwd(),
+  ".sales-cache",
+  "manufacturers.json",
+);
+let manufacturerCache = null;
+
+export function loadManufacturerCache() {
+  if (!manufacturerCache) {
+    try {
+      const parsed = JSON.parse(
+        fs.readFileSync(MANUFACTURER_CACHE_FILE, "utf8"),
+      );
+      const valid =
+        parsed && typeof parsed === "object" && !Array.isArray(parsed);
+      manufacturerCache = valid ? parsed : {};
+    } catch {
+      manufacturerCache = {};
+    }
+  }
+  return manufacturerCache;
+}
+
+export function saveManufacturerCache() {
+  writeCacheFile(MANUFACTURER_CACHE_FILE, manufacturerCache);
+}

@@ -91,3 +91,60 @@ export async function fetchChannelAdvisorOrders(
     return { items: body.value, total: Number(body["@odata.count"]) };
   }, PAGE_SIZE);
 }
+
+const PRODUCTS_URL = "https://api.channeladvisor.com/v1/Products";
+const PRODUCT_BATCH = 20;
+const PRODUCT_CONCURRENCY = 4;
+
+async function fetchProductBatch(creds, skus, token) {
+  const filter = skus
+    .map((sku) => `Sku eq '${sku.replace(/'/g, "''")}'`)
+    .join(" or ");
+  const url = new URL(PRODUCTS_URL);
+  url.search = new URLSearchParams({
+    $filter: filter,
+    $select: "Sku,Manufacturer",
+    $top: String(PRODUCT_BATCH * 2),
+    profileid: creds.profileId,
+  }).toString();
+  const body = await requestJson(
+    url,
+    { headers: { Authorization: `Bearer ${token}` } },
+    "ChannelAdvisor products request",
+  );
+  if (!Array.isArray(body?.value)) {
+    throw new Error("ChannelAdvisor products response had no 'value' list");
+  }
+  return body.value;
+}
+
+// Returns a Map of lower-cased sku -> manufacturer (empty string if unset) for
+// the SKUs that exist in the account's catalogue.
+export async function fetchChannelAdvisorManufacturers(creds, skus) {
+  let token = await getAccessToken(creds);
+  const batches = [];
+  for (let i = 0; i < skus.length; i += PRODUCT_BATCH) {
+    batches.push(skus.slice(i, i + PRODUCT_BATCH));
+  }
+  const found = new Map();
+  const load = async (batch) => {
+    let products;
+    try {
+      products = await fetchProductBatch(creds, batch, token);
+    } catch (error) {
+      if (error.status !== 401) throw error;
+      token = await getAccessToken(creds, { force: true });
+      products = await fetchProductBatch(creds, batch, token);
+    }
+    for (const product of products) {
+      found.set(
+        String(product.Sku).toLowerCase(),
+        String(product.Manufacturer || "").trim(),
+      );
+    }
+  };
+  for (let i = 0; i < batches.length; i += PRODUCT_CONCURRENCY) {
+    await Promise.all(batches.slice(i, i + PRODUCT_CONCURRENCY).map(load));
+  }
+  return found;
+}

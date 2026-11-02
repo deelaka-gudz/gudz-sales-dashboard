@@ -499,6 +499,10 @@ body {
   cursor: pointer;
 }
 
+.panel-toggle {
+  box-shadow: none;
+}
+
 .panel-loading {
   padding: 24px 0;
   color: var(--muted);

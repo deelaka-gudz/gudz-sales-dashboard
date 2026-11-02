@@ -5,7 +5,12 @@ import { CHANNEL_COLORS } from "../constants/dashboard";
 import { useSupplierSales } from "../hooks/useSupplierSales";
 import { count, money } from "../utils/format";
 
-const SupplierTable = ({ suppliers, currency }) => {
+const VIEWS = {
+  suppliers: { button: "Supplier", noun: "supplier" },
+  manufacturers: { button: "Manufacturer", noun: "manufacturer" },
+};
+
+const SupplierTable = ({ suppliers, currency, heading }) => {
   const total = suppliers.reduce((sum, s) => sum + s.revenue, 0);
   const totalUnits = suppliers.reduce((sum, s) => sum + s.units, 0);
   if (!suppliers.length) {
@@ -16,7 +21,7 @@ const SupplierTable = ({ suppliers, currency }) => {
       <table className="supplier-table">
         <thead>
           <tr>
-            <th>Supplier</th>
+            <th>{heading}</th>
             <th className="num">Units</th>
             <th className="num">Revenue</th>
             <th className="num">Share</th>
@@ -52,16 +57,21 @@ const SupplierTable = ({ suppliers, currency }) => {
   );
 };
 
-const SupplierSections = ({ data }) =>
+const SupplierSections = ({ data, view }) =>
   data.sections.map((section) => (
     <section key={section.label || "all"} className="panel-section">
       {section.label && <h3>{section.label}</h3>}
-      <SupplierTable suppliers={section.suppliers} currency={data.currency} />
+      <SupplierTable
+        suppliers={section[view]}
+        currency={data.currency}
+        heading={VIEWS[view].button}
+      />
     </section>
   ));
 
 const SupplierPanel = ({ channel, query, onClose }) => {
   const { data, error, loading, retry } = useSupplierSales(channel.key, query);
+  const [view, setView] = React.useState("suppliers");
 
   React.useEffect(() => {
     const onKey = (event) => event.key === "Escape" && onClose();
@@ -79,17 +89,29 @@ const SupplierPanel = ({ channel, query, onClose }) => {
         className="panel card"
         role="dialog"
         aria-modal="true"
-        aria-label={`${channel.label} sales by supplier`}
+        aria-label={`${channel.label} sales by ${VIEWS[view].noun}`}
         style={{ "--channel": CHANNEL_COLORS[channel.key] }}
       >
         <div className="panel-head">
           <div className="channel-name">
             <ChannelLogo channelKey={channel.key} label={channel.label} />
-            {channel.label} by supplier
+            {channel.label} by {VIEWS[view].noun}
           </div>
           <button type="button" className="panel-close" onClick={onClose}>
             Close
           </button>
+        </div>
+        <div className="segmented panel-toggle">
+          {Object.entries(VIEWS).map(([key, { button }]) => (
+            <button
+              key={key}
+              type="button"
+              className={key === view ? "active" : ""}
+              onClick={() => setView(key)}
+            >
+              {button}
+            </button>
+          ))}
         </div>
         {loading && (
           <div className="panel-loading">Loading supplier sales...</div>
@@ -99,11 +121,12 @@ const SupplierPanel = ({ channel, query, onClose }) => {
             Failed to load: {error}
           </Notice>
         )}
-        {data && <SupplierSections data={data} />}
+        {data && <SupplierSections data={data} view={view} />}
         <p className="panel-note">
           Units are the quantity sold times the pack quantity of bundles.
           Revenue is the item price, so it leaves out postage and won't match
-          the channel total. Suppliers come from Helm.
+          the channel total. Suppliers come from Helm and manufacturers from
+          ChannelAdvisor.
         </p>
       </div>
     </div>
