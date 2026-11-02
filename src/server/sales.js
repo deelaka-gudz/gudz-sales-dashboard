@@ -203,14 +203,20 @@ function mergeGroups(results) {
       merged.push(result);
       continue;
     }
-    const part = { ...result, label: channel.groupShortLabel };
+    const part = {
+      ...result,
+      label: channel.groupShortLabel,
+      excludeFromOrderCount: Boolean(channel.excludeFromOrderCount),
+    };
     const tile = merged.find((m) => m.key === channel.group);
     if (tile) {
       tile.parts.push(part);
     } else {
       merged.push({
         key: channel.group,
-        label: ALL_CHANNELS.find((c) => c.key === channel.group).label,
+        label:
+          channel.groupName ||
+          ALL_CHANNELS.find((c) => c.key === channel.group).label,
         currency: result.currency,
         orderCount: 0,
         revenue: 0,
@@ -227,7 +233,9 @@ function mergeGroups(results) {
     const revenue = tile.parts.reduce((sum, part) => sum + part.revenue, 0);
     return {
       ...tile,
-      orderCount: tile.parts.reduce((sum, part) => sum + part.orderCount, 0),
+      orderCount: tile.parts
+        .filter((part) => !part.excludeFromOrderCount)
+        .reduce((sum, part) => sum + part.orderCount, 0),
       revenue: Math.round(revenue * 100) / 100,
     };
   });

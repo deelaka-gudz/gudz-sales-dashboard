@@ -21,25 +21,45 @@ export const CHANNELS = [
     account: "UK",
     currency: "GBP",
   },
+  // Two Shopify stores sit under the one ChannelAdvisor site, told apart by
+  // SiteAccountID: Gudz (all retail) and Rio (retail and wholesale).
   {
-    key: "shopify",
-    label: "Shopify",
+    key: "shopify_gudz",
+    label: "Shopify Gudz",
     siteName: "Shopify",
-    segment: "retail",
+    siteAccountId: "18089",
     group: "shopify",
-    groupLabel: "Retail",
-    groupShortLabel: "Retail",
+    groupName: "Shopify",
+    groupLabel: "Gudz",
+    groupShortLabel: "Gudz",
     account: "UK",
     currency: "GBP",
   },
   {
-    key: "shopify_wholesale",
-    label: "Shopify Wholesale",
+    key: "shopify_rio",
+    label: "Shopify Rio",
     siteName: "Shopify",
+    siteAccountId: "18303",
+    segment: "retail",
+    group: "shopify",
+    groupName: "Shopify",
+    groupLabel: "Rio Retail",
+    groupShortLabel: "Rio retail",
+    account: "UK",
+    currency: "GBP",
+  },
+  {
+    key: "shopify_rio_wholesale",
+    label: "Shopify Rio Wholesale",
+    siteName: "Shopify",
+    siteAccountId: "18303",
     segment: "wholesale",
     group: "shopify",
-    groupLabel: "Wholesale",
-    groupShortLabel: "Wholesale",
+    groupName: "Shopify",
+    groupLabel: "Rio Wholesale",
+    groupShortLabel: "Rio wholesale",
+    // Shown on its own row but left out of the order totals.
+    excludeFromOrderCount: true,
     account: "UK",
     currency: "GBP",
   },
@@ -80,6 +100,8 @@ export const channelOwnsOrder = (channel, order) => {
   const isWholesale = WHOLESALE_TAG.test(order.OrderTags || "");
   return (
     channel.siteName === order.SiteName &&
+    (!channel.siteAccountId ||
+      channel.siteAccountId === String(order.SiteAccountID)) &&
     (!channel.fulfilment || (channel.fulfilment === "fba") === isFba) &&
     (!channel.segment || (channel.segment === "wholesale") === isWholesale)
   );
