@@ -193,7 +193,7 @@ export async function fetchDays(from, to, { accounts, mirakl, helm, keys }) {
   return { days, errors };
 }
 
-// Channels that share a `group` (Amazon UK FBM and FBA) are fetched and cached
+// Channels that share a `group` (Amazon UK FBM and FBA, Shopify retail and wholesale) are fetched and cached
 // separately but shown as one tile whose `parts` hold each fulfilment type.
 function mergeGroups(results) {
   const merged = [];

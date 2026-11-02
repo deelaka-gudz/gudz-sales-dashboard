@@ -4,7 +4,7 @@ import { readCredentials } from "../server/credentials";
 import { addDays, londonToday, resolveRange } from "../server/dates";
 import { buildBestSellers } from "../server/supplierSales";
 
-// The keys the dashboard tiles use: Amazon UK's FBM and FBA share one.
+// The keys the dashboard tiles use: Amazon UK's FBM and FBA share one, as do Shopify's retail and wholesale.
 const CHANNEL_KEYS = [
   ...new Set(
     [...CHANNELS, ...MIRAKL_CHANNELS, HELM_CHANNEL].map(

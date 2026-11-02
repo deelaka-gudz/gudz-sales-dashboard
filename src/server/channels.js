@@ -22,6 +22,28 @@ export const CHANNELS = [
     currency: "GBP",
   },
   {
+    key: "shopify",
+    label: "Shopify",
+    siteName: "Shopify",
+    segment: "retail",
+    group: "shopify",
+    groupLabel: "Retail",
+    groupShortLabel: "Retail",
+    account: "UK",
+    currency: "GBP",
+  },
+  {
+    key: "shopify_wholesale",
+    label: "Shopify Wholesale",
+    siteName: "Shopify",
+    segment: "wholesale",
+    group: "shopify",
+    groupLabel: "Wholesale",
+    groupShortLabel: "Wholesale",
+    account: "UK",
+    currency: "GBP",
+  },
+  {
     key: "ebay_uk",
     label: "eBay UK",
     siteName: "eBay Fixed Price UK",
@@ -48,12 +70,18 @@ export const CHANNELS = [
 // as "ExternallyManaged"; everything else is fulfilled by Gudz.
 export const FBA_ROLLUP_TYPE = "ExternallyManaged";
 
+// The Shopify store tags its B2B orders (e.g. "WholesaleHelperRegularOrderGraphQL");
+// every other Shopify order is a retail sale.
+const WHOLESALE_TAG = /wholesale/i;
+
 // Whether a ChannelAdvisor order belongs to this channel.
 export const channelOwnsOrder = (channel, order) => {
   const isFba = order.DistributionCenterTypeRollup === FBA_ROLLUP_TYPE;
+  const isWholesale = WHOLESALE_TAG.test(order.OrderTags || "");
   return (
     channel.siteName === order.SiteName &&
-    (!channel.fulfilment || (channel.fulfilment === "fba") === isFba)
+    (!channel.fulfilment || (channel.fulfilment === "fba") === isFba) &&
+    (!channel.segment || (channel.segment === "wholesale") === isWholesale)
   );
 };
 

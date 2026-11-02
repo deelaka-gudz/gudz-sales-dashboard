@@ -1,7 +1,7 @@
 # Gudz Sales Dashboard ![Dashboard](https://img.shields.io/badge/Dashboard-brightgreen)
 
 A Gatsby 5 dashboard that shows order counts and revenue for every Gudz sales
-channel in one place: Amazon UK (FBM and FBA), eBay UK, Temu UK, Amazon Ireland, Tesco,
+channel in one place: Amazon UK (FBM and FBA), Shopify (retail and wholesale), eBay UK, Temu UK, Amazon Ireland, Tesco,
 Superdrug and Holland & Barrett. The browser calls one Gatsby Function
 (`/api/today-sales`), which pulls the numbers from each channel's API, so no
 credentials ever reach the page.
@@ -10,7 +10,7 @@ credentials ever reach the page.
 
 1. **Shows the sales for a range**: Today, Yesterday, Last 30 days, Pick a date (one day from a calendar) or Custom range (a start and end date). The header shows the range and the dates it covers, in London time.
 2. **Reads each channel from its own source**:
-   - **Amazon UK (FBM and FBA), eBay UK, Temu UK, Amazon Ireland**: ChannelAdvisor (Rithum) OData API. The UK and Ireland accounts have separate credentials, and each channel is picked out by its site name (see `src/server/channels.js`). Amazon UK orders are split by `DistributionCenterTypeRollup`: `ExternallyManaged` orders (shipped by Amazon) are FBA, the rest are FBM. They are fetched and cached as two channels (`amazon_uk`, `amazon_fba_uk`) but shown as one Amazon UK tile whose `parts` list FBM and FBA.
+   - **Amazon UK (FBM and FBA), Shopify (retail and wholesale), eBay UK, Temu UK, Amazon Ireland**: ChannelAdvisor (Rithum) OData API. The UK and Ireland accounts have separate credentials, and each channel is picked out by its site name (see `src/server/channels.js`). Amazon UK orders are split by `DistributionCenterTypeRollup`: `ExternallyManaged` orders (shipped by Amazon) are FBA, the rest are FBM. They are fetched and cached as two channels (`amazon_uk`, `amazon_fba_uk`) but shown as one Amazon UK tile whose `parts` list FBM and FBA. Shopify orders (site name `Shopify`) are split by `OrderTags`: any order tagged with `wholesale` is Wholesale, the rest Retail (`shopify`, `shopify_wholesale`), shown as one Shopify tile.
    - **Tesco, Superdrug**: Mirakl Connect API, using `start_date` and `end_date`.
    - **Holland & Barrett**: the DC/Helm API. H&B has no API of its own, so the orders that the H&B Order Feeding automation creates in Helm (tagged "H&B Order") are counted instead. The day is the time the order was created in Helm (`date_received`), not the customer's order time, and cancelled orders are skipped, so the numbers can differ slightly from the H&B vendor portal. Today's orders only appear once the automation has run.
 3. **Counts per day and per channel**: each order is placed on its London calendar day, and a channel's revenue is added up in its own currency (Amazon Ireland is EUR, the rest GBP). The KPI cards at the top total the orders and the GBP revenue.

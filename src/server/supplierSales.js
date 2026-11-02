@@ -21,7 +21,7 @@ const number = (value) => {
 
 // Each loader returns sections of order lines as { label, lines }, where a line
 // is { day, orderId, sku, title, quantity, revenue }. `label` names the fulfilment
-// type for grouped channels (Amazon UK FBM / FBA) and is null otherwise.
+// type or segment for grouped channels (Amazon UK FBM / FBA, Shopify retail / wholesale) and is null otherwise.
 const toLine = (day, orderId, sku, title, quantity, revenue) => ({
   day,
   orderId,

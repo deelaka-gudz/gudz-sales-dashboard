@@ -419,7 +419,7 @@ body {
 
 .channel-part {
   display: grid;
-  grid-template-columns: 40px 1fr auto;
+  grid-template-columns: 5.5em 1fr auto;
   gap: 8px;
   padding-top: 8px;
   color: var(--muted);
