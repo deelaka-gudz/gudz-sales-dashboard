@@ -129,33 +129,42 @@ export function findChannel(channelKey) {
 
 // Groups lines by name, ignoring case ("ECOVER" and "Ecover" are one name,
 // shown as the spelling used by most lines). `split(line)` returns the
-// { name, units, revenue } shares of one order line.
-function totalBy(lines, split) {
+// { name, units, revenue, quantity?, title? } shares of one order line. Rows
+// are sorted by `sortField`, highest first.
+function totalBy(lines, split, sortField = "revenue") {
   const totals = new Map();
   for (const line of lines) {
-    for (const { name, units, revenue } of split(line)) {
+    for (const { name, units, revenue, quantity = 0, title = "" } of split(
+      line,
+    )) {
       const key = name.toLowerCase();
       const entry = totals.get(key) || {
         spellings: new Map(),
         units: 0,
+        quantity: 0,
+        title: "",
         revenue: 0,
         orders: new Set(),
       };
       entry.spellings.set(name, (entry.spellings.get(name) || 0) + 1);
       entry.units += units;
+      entry.quantity += quantity;
+      entry.title ||= title;
       entry.revenue += revenue;
       entry.orders.add(line.orderId);
       totals.set(key, entry);
     }
   }
   return [...totals.values()]
-    .map(({ spellings, units, revenue, orders }) => ({
+    .map(({ spellings, units, quantity, title, revenue, orders }) => ({
       name: [...spellings].sort((x, y) => y[1] - x[1])[0][0],
+      title,
       units,
+      quantity,
       revenue: Math.round(revenue * 100) / 100,
       orders: orders.size,
     }))
-    .sort((x, y) => y.revenue - x.revenue);
+    .sort((x, y) => y[sortField] - x[sortField]);
 }
 
 const packOf = (info) => info.parts.reduce((sum, part) => sum + part.pack, 0);
@@ -179,6 +188,31 @@ const byManufacturer = (infoOf) => (line) => {
     {
       name: info.manufacturer,
       units: line.quantity * packOf(info),
+      revenue: line.revenue,
+    },
+  ];
+};
+
+// A listing SKU as sold, ranked by quantity sold.
+const bySku = (infoOf) => (line) => [
+  {
+    name: line.sku,
+    title: line.title,
+    units: line.quantity * packOf(infoOf(line)),
+    quantity: line.quantity,
+    revenue: line.revenue,
+  },
+];
+
+// "Our SKU", so every listing of the same item counts together, ranked by units.
+const byProduct = (infoOf) => (line) => {
+  const info = infoOf(line);
+  return [
+    {
+      name: info.ourSku,
+      title: line.title,
+      units: line.quantity * packOf(info),
+      quantity: line.quantity,
       revenue: line.revenue,
     },
   ];
@@ -299,8 +333,7 @@ function createTally() {
   };
 }
 
-// Returns sections sorted by revenue: [{ label, suppliers, manufacturers,
-// bestSku, bestProduct }]. `units` is quantity sold times the pack size, so a
+// Returns sections: [{ label, suppliers, manufacturers, skus, products }]. `units` is quantity sold times the pack size, so a
 // line of 2 for a "pack of 6" counts 12 units.
 export async function buildSupplierSales(channelKey, credentials, range) {
   const { sections, infoOf } = await loadChannel(
@@ -309,13 +342,12 @@ export async function buildSupplierSales(channelKey, credentials, range) {
     range,
   );
   return sections.map(({ label, lines }) => {
-    const tally = createTally();
-    tally.add(lines, infoOf);
     return {
       label,
       suppliers: totalBy(lines, bySupplier(infoOf)),
       manufacturers: totalBy(lines, byManufacturer(infoOf)),
-      ...tally.best(),
+      skus: totalBy(lines, bySku(infoOf), "quantity"),
+      products: totalBy(lines, byProduct(infoOf), "units"),
     };
   });
 }

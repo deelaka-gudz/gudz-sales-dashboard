@@ -1,5 +1,4 @@
 import * as React from "react";
-import { ChannelBest } from "./BestSellers";
 import ChannelLogo from "./ChannelLogo";
 import Notice from "./Notice";
 import { CHANNEL_COLORS } from "../constants/dashboard";
@@ -9,9 +8,14 @@ import { count, money } from "../utils/format";
 const VIEWS = {
   suppliers: { button: "Supplier", noun: "supplier" },
   manufacturers: { button: "Brand", noun: "brand" },
+  skus: { button: "SKU", noun: "SKU" },
+  products: { button: "Product", noun: "product" },
 };
 
-const SupplierTable = ({ suppliers, currency, heading, limit }) => {
+// The views that list only their top rows until the user asks for more.
+const LIMITS = { manufacturers: 10, skus: 10, products: 10 };
+
+const SupplierTable = ({ suppliers, currency, heading, limit, showSold }) => {
   const [expanded, setExpanded] = React.useState(false);
   const total = suppliers.reduce((sum, s) => sum + s.revenue, 0);
   const totalUnits = suppliers.reduce((sum, s) => sum + s.units, 0);
@@ -26,6 +30,7 @@ const SupplierTable = ({ suppliers, currency, heading, limit }) => {
         <thead>
           <tr>
             <th>{heading}</th>
+            {showSold && <th className="num">Packs</th>}
             <th className="num">Units</th>
             <th className="num">Orders</th>
             <th className="num">Revenue</th>
@@ -33,16 +38,22 @@ const SupplierTable = ({ suppliers, currency, heading, limit }) => {
           </tr>
         </thead>
         <tbody>
-          {shown.map((supplier) => {
+          {shown.map((supplier, index) => {
             const share = total ? (supplier.revenue / total) * 100 : 0;
             return (
-              <tr key={supplier.name}>
+              <tr key={supplier.name} className={index === 0 ? "top-row" : ""}>
                 <td>
                   <div className="supplier-name">{supplier.name}</div>
+                  {supplier.title && (
+                    <div className="supplier-title">{supplier.title}</div>
+                  )}
                   <div className="share">
                     <div style={{ width: `${share}%` }} />
                   </div>
                 </td>
+                {showSold && (
+                  <td className="num">{count(supplier.quantity)}</td>
+                )}
                 <td className="num">{count(supplier.units)}</td>
                 <td className="num">{count(supplier.orders)}</td>
                 <td className="num">{money(supplier.revenue, currency)}</td>
@@ -54,6 +65,7 @@ const SupplierTable = ({ suppliers, currency, heading, limit }) => {
         <tfoot>
           <tr>
             <td>Total</td>
+            {showSold && <td />}
             <td className="num">{count(totalUnits)}</td>
             <td />
             <td className="num">{money(total, currency)}</td>
@@ -73,19 +85,17 @@ const SupplierTable = ({ suppliers, currency, heading, limit }) => {
   );
 };
 
-// Brands are many, so only the top ones are listed until the user asks for more.
-const BRAND_LIMIT = 10;
-
 const SupplierSections = ({ data, view }) =>
   data.sections.map((section) => (
     <section key={section.label || "all"} className="panel-section">
       {section.label && <h3>{section.label}</h3>}
-      <ChannelBest best={section} status={{}} />
       <SupplierTable
+        key={view}
         suppliers={section[view]}
         currency={data.currency}
         heading={VIEWS[view].button}
-        limit={view === "manufacturers" ? BRAND_LIMIT : 0}
+        limit={LIMITS[view] || 0}
+        showSold={view === "skus"}
       />
     </section>
   ));
@@ -148,8 +158,7 @@ const SupplierPanel = ({ channel, query, onClose }) => {
           ChannelAdvisor). Orders count each order once per row, so rows can add
           up to more than the channel total. Revenue is the item price, so it
           leaves out postage and won't match the channel total. Suppliers and
-          brands come from ChannelAdvisor; only Holland &amp; Barrett
-          uses Helm.
+          brands come from ChannelAdvisor; only Holland &amp; Barrett uses Helm.
         </p>
       </div>
     </div>

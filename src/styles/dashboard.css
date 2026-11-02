@@ -562,6 +562,15 @@ body {
   cursor: pointer;
 }
 
+.supplier-title {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.supplier-table .top-row td {
+  background: color-mix(in srgb, var(--channel) 12%, transparent);
+}
+
 .supplier-name {
   font-weight: 600;
 }
