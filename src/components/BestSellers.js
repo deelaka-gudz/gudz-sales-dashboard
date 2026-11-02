@@ -23,8 +23,8 @@ const statusText = ({ loading, error }, best) => {
 };
 
 export const BestKpi = ({ label, item, detail, status, best }) => (
-  <div className="card">
-    <div className="kpi-label">{label}</div>
+  <div className="card kpi-best">
+    <div className="kpi-label">★ {label}</div>
     <div className="kpi-value kpi-text" title={item?.name}>
       {item ? item.name : statusText(status, best)}
     </div>

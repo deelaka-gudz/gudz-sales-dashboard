@@ -633,6 +633,24 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.kpis-best {
+  margin-top: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.kpi-best {
+  border-color: #f5b301;
+  background: linear-gradient(135deg, rgba(245, 179, 1, 0.14), var(--surface));
+  box-shadow:
+    0 0 0 1px rgba(245, 179, 1, 0.35),
+    var(--shadow);
+}
+
+.kpi-best .kpi-label {
+  color: #f5b301;
+  font-weight: 600;
+}
+
 .kpi-text {
   font-size: 22px;
   overflow-wrap: anywhere;

@@ -10,24 +10,28 @@ const KpiCard = ({ label, value }) => (
 );
 
 const KpiCards = ({ totalOrders, revenueByCurrency, best }) => (
-  <div className="kpis">
-    <KpiCard label="Total orders" value={count(totalOrders)} />
-    {Object.entries(revenueByCurrency).map(([currency, total]) => (
-      <KpiCard
-        key={currency}
-        label={`Revenue (${currency})`}
-        value={money(total, currency)}
-      />
-    ))}
-    {bestLines(best.data?.overall).map((line) => (
-      <BestKpi
-        key={line.label}
-        {...line}
-        status={best}
-        best={best.data?.overall}
-      />
-    ))}
-  </div>
+  <>
+    <div className="kpis">
+      <KpiCard label="Total orders" value={count(totalOrders)} />
+      {Object.entries(revenueByCurrency).map(([currency, total]) => (
+        <KpiCard
+          key={currency}
+          label={`Revenue (${currency})`}
+          value={money(total, currency)}
+        />
+      ))}
+    </div>
+    <div className="kpis kpis-best">
+      {bestLines(best.data?.overall).map((line) => (
+        <BestKpi
+          key={line.label}
+          {...line}
+          status={best}
+          best={best.data?.overall}
+        />
+      ))}
+    </div>
+  </>
 );
 
 export default KpiCards;
