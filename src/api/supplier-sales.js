@@ -27,6 +27,8 @@ export default async function handler(req, res) {
     if (range.error) return res.status(400).json({ error: range.error });
     const { from, to } = range;
 
+    // Grouped channels (Amazon UK, Shopify) are asked for by their group key.
+    const channelKey = channel.group || channel.key;
     const credentials = readCredentials();
     if (channel.key === HELM_CHANNEL.key && !hasHelmCredentials(credentials)) {
       return res.status(500).json({
@@ -35,15 +37,15 @@ export default async function handler(req, res) {
       });
     }
 
-    const sections = await buildSupplierSales(channel.key, credentials, {
+    const sections = await buildSupplierSales(channelKey, credentials, {
       from,
       to,
       since: londonDayStartUtc(from),
       until: londonDayStartUtc(addDays(to, 1)),
     });
     res.status(200).json({
-      channel: channel.key,
-      label: channel.label,
+      channel: channelKey,
+      label: channel.groupName || channel.label,
       currency: channel.currency,
       from,
       to,

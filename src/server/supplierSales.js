@@ -123,7 +123,7 @@ async function fetchSections(channelKey, { accounts, mirakl, helm }, range) {
 
 export function findChannel(channelKey) {
   return [...CHANNELS, ...MIRAKL_CHANNELS, HELM_CHANNEL].find(
-    (c) => c.key === channelKey,
+    (c) => (c.group || c.key) === channelKey,
   );
 }
 

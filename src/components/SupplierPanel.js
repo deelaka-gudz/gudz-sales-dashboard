@@ -8,7 +8,7 @@ import { count, money } from "../utils/format";
 
 const VIEWS = {
   suppliers: { button: "Supplier", noun: "supplier" },
-  manufacturers: { button: "Manufacturer", noun: "manufacturer" },
+  manufacturers: { button: "Brand", noun: "brand" },
 };
 
 const SupplierTable = ({ suppliers, currency, heading }) => {
@@ -132,7 +132,7 @@ const SupplierPanel = ({ channel, query, onClose }) => {
           ChannelAdvisor). Orders count each order once per row, so rows can add
           up to more than the channel total. Revenue is the item price, so it
           leaves out postage and won't match the channel total. Suppliers and
-          manufacturers come from ChannelAdvisor; only Holland &amp; Barrett
+          brands come from ChannelAdvisor; only Holland &amp; Barrett
           uses Helm.
         </p>
       </div>

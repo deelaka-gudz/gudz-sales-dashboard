@@ -1,7 +1,7 @@
 import { fetchChannelAdvisorCatalogue } from "./channelAdvisor";
 import { loadCatalogueCache, saveCatalogueCache } from "./cache";
 
-export const NO_MANUFACTURER = "No manufacturer set";
+export const NO_MANUFACTURER = "No brand set";
 export const NO_SUPPLIER = "No supplier set";
 export const NOT_IN_CA = "SKU not in ChannelAdvisor";
 
