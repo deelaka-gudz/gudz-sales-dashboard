@@ -44,6 +44,9 @@ export const CHANNELS = [
     group: "shopify",
     groupName: "Shopify",
     groupLabel: "Rio Retail",
+    // Rio makes and sells its own goods, so it is its own supplier and brand.
+    supplierName: "Rio",
+    brandName: "Rio",
     groupShortLabel: "Rio retail",
     account: "UK",
     currency: "GBP",
@@ -57,6 +60,9 @@ export const CHANNELS = [
     group: "shopify",
     groupName: "Shopify",
     groupLabel: "Rio Wholesale",
+    // Rio makes and sells its own goods, so it is its own supplier and brand.
+    supplierName: "Rio",
+    brandName: "Rio",
     groupShortLabel: "Rio wholesale",
     // Shown on its own row but left out of the order totals.
     excludeFromOrderCount: true,

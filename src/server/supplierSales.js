@@ -43,8 +43,8 @@ async function caSections({ channels, creds, since, until }) {
     lines: orders
       .filter((order) => channelOwnsOrder(channel, order))
       .flatMap((order) =>
-        (order.Items || []).map((item) =>
-          toLine(
+        (order.Items || []).map((item) => ({
+          ...toLine(
             londonDayOf(order.CheckoutDateUtc),
             order.ID,
             item.Sku,
@@ -52,7 +52,9 @@ async function caSections({ channels, creds, since, until }) {
             item.Quantity,
             number(item.UnitPrice) * number(item.Quantity),
           ),
-        ),
+          supplier: channel.supplierName,
+          brand: channel.brandName,
+        })),
       ),
   }));
 }
@@ -170,7 +172,17 @@ function totalBy(lines, split, sortField = "revenue") {
 const packOf = (info) => info.parts.reduce((sum, part) => sum + part.pack, 0);
 
 // A bundle line is shared between its component suppliers by pack quantity.
+// A line with its own `supplier` (Rio's own goods) belongs to that supplier alone.
 const bySupplier = (infoOf) => (line) => {
+  if (line.supplier) {
+    return [
+      {
+        name: line.supplier,
+        units: line.quantity * packOf(infoOf(line)),
+        revenue: line.revenue,
+      },
+    ];
+  }
   const { parts } = infoOf(line);
   const packs = parts.reduce((sum, part) => sum + part.pack, 0);
   return parts.map((part) => ({
@@ -186,7 +198,7 @@ const byManufacturer = (infoOf) => (line) => {
   const info = infoOf(line);
   return [
     {
-      name: info.manufacturer,
+      name: line.brand || info.manufacturer,
       units: line.quantity * packOf(info),
       revenue: line.revenue,
     },
