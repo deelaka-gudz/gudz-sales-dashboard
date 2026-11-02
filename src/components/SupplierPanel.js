@@ -11,9 +11,12 @@ const VIEWS = {
   manufacturers: { button: "Brand", noun: "brand" },
 };
 
-const SupplierTable = ({ suppliers, currency, heading }) => {
+const SupplierTable = ({ suppliers, currency, heading, limit }) => {
+  const [expanded, setExpanded] = React.useState(false);
   const total = suppliers.reduce((sum, s) => sum + s.revenue, 0);
   const totalUnits = suppliers.reduce((sum, s) => sum + s.units, 0);
+  const hidden = limit && !expanded ? suppliers.length - limit : 0;
+  const shown = hidden > 0 ? suppliers.slice(0, limit) : suppliers;
   if (!suppliers.length) {
     return <Notice>No items were sold on this channel in this period.</Notice>;
   }
@@ -30,7 +33,7 @@ const SupplierTable = ({ suppliers, currency, heading }) => {
           </tr>
         </thead>
         <tbody>
-          {suppliers.map((supplier) => {
+          {shown.map((supplier) => {
             const share = total ? (supplier.revenue / total) * 100 : 0;
             return (
               <tr key={supplier.name}>
@@ -57,9 +60,21 @@ const SupplierTable = ({ suppliers, currency, heading }) => {
           </tr>
         </tfoot>
       </table>
+      {limit && suppliers.length > limit && (
+        <button
+          type="button"
+          className="show-more"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "Show less" : `Show ${hidden} more`}
+        </button>
+      )}
     </div>
   );
 };
+
+// Brands are many, so only the top ones are listed until the user asks for more.
+const BRAND_LIMIT = 10;
 
 const SupplierSections = ({ data, view }) =>
   data.sections.map((section) => (
@@ -70,6 +85,7 @@ const SupplierSections = ({ data, view }) =>
         suppliers={section[view]}
         currency={data.currency}
         heading={VIEWS[view].button}
+        limit={view === "manufacturers" ? BRAND_LIMIT : 0}
       />
     </section>
   ));
