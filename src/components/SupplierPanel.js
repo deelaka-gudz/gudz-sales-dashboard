@@ -45,7 +45,6 @@ const SupplierTable = ({ suppliers, currency }) => {
             <td>Total</td>
             <td className="num">{count(totalUnits)}</td>
             <td className="num">{money(total, currency)}</td>
-            <td />
           </tr>
         </tfoot>
       </table>
@@ -71,14 +70,17 @@ const SupplierPanel = ({ channel, query, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="overlay" onClick={onClose}>
+    <div
+      className="overlay"
+      role="presentation"
+      onClick={(event) => event.target === event.currentTarget && onClose()}
+    >
       <div
         className="panel card"
         role="dialog"
         aria-modal="true"
         aria-label={`${channel.label} sales by supplier`}
         style={{ "--channel": CHANNEL_COLORS[channel.key] }}
-        onClick={(event) => event.stopPropagation()}
       >
         <div className="panel-head">
           <div className="channel-name">

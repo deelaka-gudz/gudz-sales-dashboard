@@ -134,6 +134,8 @@ const ChannelPie = ({ channels }) => {
         </svg>
         <ul className="pie-legend">
           {slices.map(({ channel, value, share }) => (
+            // Hover only highlights the matching slice; nothing here is a control.
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
             <li
               key={channel.key}
               className={active === channel.key ? "on" : ""}
