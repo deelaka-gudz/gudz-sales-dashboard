@@ -13,7 +13,7 @@ async function readSuppliers(response) {
     );
   }
   if (!response.ok) throw new Error(body.error || response.statusText);
-  if (!Array.isArray(body.suppliers)) {
+  if (!Array.isArray(body.sections)) {
     throw new Error("The server response was missing supplier data");
   }
   return body;
