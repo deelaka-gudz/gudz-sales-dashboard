@@ -245,6 +245,12 @@ body {
   gap: 16px;
 }
 
+@media (min-width: 1025px) {
+  .channels {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .channel {
   position: relative;
   overflow: hidden;
