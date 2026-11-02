@@ -8,7 +8,9 @@ const CACHE_FILE = path.join(process.cwd(), ".sales-cache", "days.json");
 let dayCache = null;
 
 export const isEntry = (entry) =>
-  Boolean(entry) && Number.isFinite(entry.count) && Number.isFinite(entry.revenue);
+  Boolean(entry) &&
+  Number.isFinite(entry.count) &&
+  Number.isFinite(entry.revenue);
 
 export function loadDayCache() {
   if (!dayCache) {
@@ -17,6 +19,11 @@ export function loadDayCache() {
       const valid =
         parsed && typeof parsed === "object" && !Array.isArray(parsed);
       dayCache = valid ? parsed : {};
+      // Days cached before Amazon FBA UK was split out still count FBA orders
+      // under Amazon UK, so drop that figure and let it be fetched again.
+      for (const day of Object.values(dayCache)) {
+        if (day?.amazon_uk && !day.amazon_fba_uk) delete day.amazon_uk;
+      }
     } catch {
       dayCache = {};
     }

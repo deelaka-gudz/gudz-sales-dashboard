@@ -33,7 +33,8 @@ async function getAccessToken(creds, { force = false } = {}) {
   }
   const lifetime = Math.max(
     TOKEN_EXPIRY_MARGIN_S,
-    (Number(body.expires_in) || DEFAULT_TOKEN_LIFETIME_S) - TOKEN_EXPIRY_MARGIN_S,
+    (Number(body.expires_in) || DEFAULT_TOKEN_LIFETIME_S) -
+      TOKEN_EXPIRY_MARGIN_S,
   );
   tokenCache.set(cacheKey, {
     token: body.access_token,
@@ -46,7 +47,7 @@ function ordersUrl(creds, filter, skip) {
   const url = new URL(ORDERS_URL);
   const params = {
     $filter: filter,
-    $select: "SiteName,TotalPrice,CheckoutDateUtc",
+    $select: "SiteName,TotalPrice,CheckoutDateUtc,DistributionCenterTypeRollup",
     $top: String(PAGE_SIZE),
     $skip: String(skip),
     profileid: creds.profileId,

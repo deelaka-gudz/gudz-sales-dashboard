@@ -3,6 +3,15 @@ export const CHANNELS = [
     key: "amazon_uk",
     label: "Amazon UK",
     siteName: "Amazon UK",
+    fulfilment: "merchant",
+    account: "UK",
+    currency: "GBP",
+  },
+  {
+    key: "amazon_fba_uk",
+    label: "Amazon FBA UK",
+    siteName: "Amazon UK",
+    fulfilment: "fba",
     account: "UK",
     currency: "GBP",
   },
@@ -28,6 +37,10 @@ export const CHANNELS = [
     currency: "EUR",
   },
 ];
+
+// ChannelAdvisor marks orders that Amazon ships from its own warehouses (FBA)
+// as "ExternallyManaged"; everything else is fulfilled by Gudz.
+export const FBA_ROLLUP_TYPE = "ExternallyManaged";
 
 export const MIRAKL_CHANNELS = [
   { key: "tesco", label: "Tesco", currency: "GBP" },
