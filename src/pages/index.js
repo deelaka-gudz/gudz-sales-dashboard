@@ -22,7 +22,7 @@ const IndexPage = () => {
   const [custom, setCustom] = React.useState(null);
   const [date, setDate] = React.useState("");
   const query = buildQuery(range, custom, date);
-  const { data, error, loading, retry } = useSales(query);
+  const { data, error, loading, retry, updatedAt } = useSales(query);
 
   return (
     <main className="dash">
@@ -33,6 +33,9 @@ const IndexPage = () => {
         title={RANGES[range].title}
         from={data?.from}
         to={data?.to}
+        updatedAt={updatedAt}
+        onRefresh={query ? retry : undefined}
+        refreshing={loading}
       />
 
       {error && (

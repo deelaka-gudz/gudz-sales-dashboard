@@ -30,11 +30,13 @@ function describeError(error, signal) {
 export function useSales(query) {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [updatedAt, setUpdatedAt] = React.useState(null);
   const [attempt, setAttempt] = React.useState(0);
 
   React.useEffect(() => {
     if (!query) return undefined;
     setData(null);
+    setUpdatedAt(null);
     setError(null);
 
     const controller = new AbortController();
@@ -44,7 +46,10 @@ export function useSales(query) {
     );
     fetch(`/api/today-sales?${query}`, { signal: controller.signal })
       .then(readSales)
-      .then(setData)
+      .then((body) => {
+        setData(body);
+        setUpdatedAt(new Date());
+      })
       .catch((err) => {
         const superseded =
           controller.signal.aborted && controller.signal.reason !== TIMEOUT;
@@ -61,5 +66,5 @@ export function useSales(query) {
   const retry = React.useCallback(() => setAttempt((n) => n + 1), []);
   const loading = Boolean(query) && !data && !error;
 
-  return { data, error, loading, retry };
+  return { data, error, loading, retry, updatedAt };
 }
