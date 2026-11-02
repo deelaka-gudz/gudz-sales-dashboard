@@ -411,13 +411,6 @@ body {
   outline-offset: 2px;
 }
 
-.channel-more {
-  margin-top: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--channel, var(--accent));
-}
-
 .channel-parts {
   margin-top: 14px;
   border-top: 1px solid var(--border);

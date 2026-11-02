@@ -73,7 +73,6 @@ const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
       {!channel.error && channel.parts && (
         <ChannelParts parts={channel.parts} />
       )}
-      {clickable && <div className="channel-more">View suppliers &rarr;</div>}
     </div>
   );
 };

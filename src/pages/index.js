@@ -34,7 +34,7 @@ const IndexPage = () => {
         from={data?.from}
         to={data?.to}
         updatedAt={updatedAt}
-        onRefresh={query ? retry : undefined}
+        onRefresh={range === "today" ? retry : undefined}
         refreshing={loading}
       />
 
