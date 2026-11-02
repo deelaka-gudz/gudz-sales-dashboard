@@ -7,7 +7,6 @@ import tesco from "../images/channels/tesco.svg";
 
 export const CHANNEL_LOGOS = {
   amazon_uk: amazonUk,
-  amazon_fba_uk: amazonUk,
   amazon_ie: amazonIe,
   ebay_uk: ebayUk,
   temu_uk: temuUk,

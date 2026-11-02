@@ -193,8 +193,48 @@ export async function fetchDays(from, to, { accounts, mirakl, helm, keys }) {
   return { days, errors };
 }
 
+// Channels that share a `group` (Amazon UK FBM and FBA) are fetched and cached
+// separately but shown as one tile whose `parts` hold each fulfilment type.
+function mergeGroups(results) {
+  const merged = [];
+  for (const result of results) {
+    const channel = ALL_CHANNELS.find((c) => c.key === result.key);
+    if (!channel.group) {
+      merged.push(result);
+      continue;
+    }
+    const part = { ...result, label: channel.groupLabel };
+    const tile = merged.find((m) => m.key === channel.group);
+    if (tile) {
+      tile.parts.push(part);
+    } else {
+      merged.push({
+        key: channel.group,
+        label: ALL_CHANNELS.find((c) => c.key === channel.group).label,
+        currency: result.currency,
+        orderCount: 0,
+        revenue: 0,
+        parts: [part],
+      });
+    }
+  }
+  return merged.map((tile) => {
+    if (!tile.parts) return tile;
+    const failed = tile.parts.find((part) => part.error);
+    if (failed) {
+      return { ...tile, error: `${failed.label}: ${failed.error}` };
+    }
+    const revenue = tile.parts.reduce((sum, part) => sum + part.revenue, 0);
+    return {
+      ...tile,
+      orderCount: tile.parts.reduce((sum, part) => sum + part.orderCount, 0),
+      revenue: Math.round(revenue * 100) / 100,
+    };
+  });
+}
+
 export function buildChannels({ wanted, fresh, cache, errors }) {
-  return ALL_CHANNELS.map((channel) => {
+  const results = ALL_CHANNELS.map((channel) => {
     const result = {
       key: channel.key,
       label: channel.label,
@@ -217,4 +257,5 @@ export function buildChannels({ wanted, fresh, cache, errors }) {
     result.revenue = Math.round(revenue * 100) / 100;
     return result;
   });
+  return mergeGroups(results);
 }

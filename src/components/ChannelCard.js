@@ -24,6 +24,20 @@ const ChannelStats = ({ channel, currencyTotal }) => {
   );
 };
 
+const ChannelParts = ({ parts }) => (
+  <div className="channel-parts">
+    {parts.map((part) => (
+      <div key={part.label} className="channel-part">
+        <span className="channel-part-label">{part.label}</span>
+        <span>{count(part.orderCount)} orders</span>
+        <span className="channel-part-revenue">
+          {money(part.revenue, part.currency)}
+        </span>
+      </div>
+    ))}
+  </div>
+);
+
 const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
   const clickable = !channel.error && onSelect;
   const onKeyDown = (event) => {
@@ -55,6 +69,9 @@ const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
         </div>
       ) : (
         <ChannelStats channel={channel} currencyTotal={currencyTotal} />
+      )}
+      {!channel.error && channel.parts && (
+        <ChannelParts parts={channel.parts} />
       )}
       {clickable && <div className="channel-more">View suppliers &rarr;</div>}
     </div>

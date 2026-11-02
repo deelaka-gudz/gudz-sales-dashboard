@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const suppliers = await buildSupplierSales(channel.key, credentials, {
+    const sections = await buildSupplierSales(channel.key, credentials, {
       from,
       to,
       since: londonDayStartUtc(from),
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       currency: channel.currency,
       from,
       to,
-      suppliers,
+      sections,
     });
   } catch (error) {
     res.status(500).json({ error: error.message || "Unexpected server error" });

@@ -8,7 +8,6 @@ export const RANGES = {
 
 export const CHANNEL_COLORS = {
   amazon_uk: "#f59e0b",
-  amazon_fba_uk: "#ef4444",
   amazon_ie: "#10b981",
   ebay_uk: "#3b82f6",
   temu_uk: "#f97316",

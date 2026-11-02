@@ -388,6 +388,40 @@ body {
   color: var(--channel, var(--accent));
 }
 
+.channel-parts {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.channel-part {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 8px;
+  padding-top: 8px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.channel-part-label {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.channel-part-revenue {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.panel-section h3 {
+  margin: 20px 0 4px;
+  font-size: 14px;
+}
+
+.panel-section:first-of-type h3 {
+  margin-top: 0;
+}
+
 .overlay {
   position: fixed;
   inset: 0;

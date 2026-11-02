@@ -5,10 +5,10 @@ import { CHANNEL_COLORS } from "../constants/dashboard";
 import { useSupplierSales } from "../hooks/useSupplierSales";
 import { count, money } from "../utils/format";
 
-const SupplierTable = ({ data }) => {
-  const total = data.suppliers.reduce((sum, s) => sum + s.revenue, 0);
-  const totalUnits = data.suppliers.reduce((sum, s) => sum + s.units, 0);
-  if (!data.suppliers.length) {
+const SupplierTable = ({ suppliers, currency }) => {
+  const total = suppliers.reduce((sum, s) => sum + s.revenue, 0);
+  const totalUnits = suppliers.reduce((sum, s) => sum + s.units, 0);
+  if (!suppliers.length) {
     return <Notice>No items were sold on this channel in this period.</Notice>;
   }
   return (
@@ -23,7 +23,7 @@ const SupplierTable = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          {data.suppliers.map((supplier) => {
+          {suppliers.map((supplier) => {
             const share = total ? (supplier.revenue / total) * 100 : 0;
             return (
               <tr key={supplier.name}>
@@ -34,9 +34,7 @@ const SupplierTable = ({ data }) => {
                   </div>
                 </td>
                 <td className="num">{count(supplier.units)}</td>
-                <td className="num">
-                  {money(supplier.revenue, data.currency)}
-                </td>
+                <td className="num">{money(supplier.revenue, currency)}</td>
                 <td className="num">{share.toFixed(1)}%</td>
               </tr>
             );
@@ -46,7 +44,7 @@ const SupplierTable = ({ data }) => {
           <tr>
             <td>Total</td>
             <td className="num">{count(totalUnits)}</td>
-            <td className="num">{money(total, data.currency)}</td>
+            <td className="num">{money(total, currency)}</td>
             <td />
           </tr>
         </tfoot>
@@ -54,6 +52,14 @@ const SupplierTable = ({ data }) => {
     </div>
   );
 };
+
+const SupplierSections = ({ data }) =>
+  data.sections.map((section) => (
+    <section key={section.label || "all"} className="panel-section">
+      {section.label && <h3>{section.label}</h3>}
+      <SupplierTable suppliers={section.suppliers} currency={data.currency} />
+    </section>
+  ));
 
 const SupplierPanel = ({ channel, query, onClose }) => {
   const { data, error, loading, retry } = useSupplierSales(channel.key, query);
@@ -91,7 +97,7 @@ const SupplierPanel = ({ channel, query, onClose }) => {
             Failed to load: {error}
           </Notice>
         )}
-        {data && <SupplierTable data={data} />}
+        {data && <SupplierSections data={data} />}
         <p className="panel-note">
           Units are the quantity sold times the pack quantity of bundles.
           Revenue is the item price, so it leaves out postage and won't match
