@@ -203,7 +203,7 @@ function mergeGroups(results) {
       merged.push(result);
       continue;
     }
-    const part = { ...result, label: channel.groupLabel };
+    const part = { ...result, label: channel.groupShortLabel };
     const tile = merged.find((m) => m.key === channel.group);
     if (tile) {
       tile.parts.push(part);
