@@ -7,12 +7,12 @@ export const bestLines = (best) => [
   {
     label: "Best selling SKU",
     item: best?.bestSku,
-    detail: (item) => `${count(item.units)} units`,
+    detail: (item) => `${count(item.orders)} orders`,
   },
   {
     label: "Best selling product",
     item: best?.bestProduct,
-    detail: (item) => `${count(item.quantity)} sold`,
+    detail: (item) => `${count(item.units)} units`,
   },
 ];
 

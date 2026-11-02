@@ -234,22 +234,50 @@ async function loadChannel(channelKey, credentials, range) {
 function createTally() {
   const skus = new Map();
   const products = new Map();
-  const bump = (map, { name, title, units, quantity }) => {
+  const bump = (map, { name, title, units, quantity, orders }) => {
     const key = name.toLowerCase();
-    const entry = map.get(key) || { name, title: "", units: 0, quantity: 0 };
+    const entry = map.get(key) || {
+      name,
+      title: "",
+      units: 0,
+      quantity: 0,
+      orders: 0,
+    };
     entry.units += units;
     entry.quantity += quantity;
+    entry.orders += orders;
     entry.title ||= title;
     map.set(key, entry);
   };
   return {
     add(lines, infoOf) {
+      // An order with several lines of the same item still counts once.
+      const seen = new Set();
+      const orderCount = (kind, name, orderId) => {
+        const id = `${kind}|${name.toLowerCase()}|${orderId}`;
+        if (seen.has(id)) return 0;
+        seen.add(id);
+        return 1;
+      };
       for (const line of lines) {
         const info = infoOf(line);
         const units = line.quantity * packOf(info);
-        const { title, quantity } = line;
-        bump(skus, { name: info.ourSku, title, units, quantity });
-        bump(products, { name: line.sku, title, units, quantity });
+        const { title, quantity, orderId } = line;
+        const { ourSku } = info;
+        bump(skus, {
+          name: ourSku,
+          title,
+          units,
+          quantity,
+          orders: orderCount("sku", ourSku, orderId),
+        });
+        bump(products, {
+          name: line.sku,
+          title,
+          units,
+          quantity,
+          orders: orderCount("product", line.sku, orderId),
+        });
       }
     },
     // The totals as plain data, which is how a day is kept in the cache.
@@ -264,8 +292,8 @@ function createTally() {
       const top = (map, field) =>
         [...map.values()].sort((x, y) => y[field] - x[field])[0] || null;
       return {
-        bestSku: top(skus, "units"),
-        bestProduct: top(products, "quantity"),
+        bestSku: top(products, "quantity"),
+        bestProduct: top(skus, "units"),
       };
     },
   };
@@ -292,7 +320,7 @@ export async function buildSupplierSales(channelKey, credentials, range) {
   });
 }
 
-// Best selling SKU (most units) and product (most quantity) for each channel
+// Best selling SKU (most sold) and product (most units) for each channel
 // and across all of them: { overall, channels: { [key]: best | { error } } }.
 // Days up to `cacheableUpTo` are kept once worked out, so only the days not
 // seen before are fetched.

@@ -106,7 +106,7 @@ export function saveCatalogueCache() {
 const BEST_SELLER_CACHE_FILE = path.join(
   process.cwd(),
   ".sales-cache",
-  "bestsellers.json",
+  "bestsellers-v2.json",
 );
 let bestSellerCache = null;
 
