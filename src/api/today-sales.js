@@ -51,6 +51,11 @@ export default async function handler(req, res) {
       cacheableUpTo,
       refresh: query.refresh,
     });
+    if (query.probe) {
+      // Reports which days still need fetching, without fetching anything.
+      const missing = [...new Set(Object.values(needed).flat())].sort();
+      return res.status(200).json({ missing });
+    }
     const keys = new Set(
       ALL_CHANNELS.map((c) => c.key).filter(
         (key) => needed[key].length && !errors[key],

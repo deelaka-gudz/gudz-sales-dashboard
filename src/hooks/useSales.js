@@ -74,6 +74,27 @@ function mergeChunks(bodies) {
 }
 
 async function fetchChunked(days, signal) {
+  // When the cache already holds nearly every day, one request covers the
+  // whole range; only a long stretch of missing days needs splitting up.
+  try {
+    const probe = await fetch(
+      `/api/today-sales?from=${days[0]}&to=${days[days.length - 1]}&probe=1`,
+      { signal },
+    );
+    const { missing } = await probe.json();
+    if (Array.isArray(missing)) {
+      const span = missing.length
+        ? eachDay(missing[0], missing[missing.length - 1]).length
+        : 0;
+      if (span <= CHUNK_DAYS) {
+        const url = `/api/today-sales?from=${days[0]}&to=${days[days.length - 1]}`;
+        return await readSales(await fetch(url, { signal }));
+      }
+    }
+  } catch (error) {
+    if (signal.aborted) throw error;
+    // The probe failed, so fall back to loading in chunks.
+  }
   const chunks = [];
   for (let i = 0; i < days.length; i += CHUNK_DAYS) {
     chunks.push(days.slice(i, i + CHUNK_DAYS));
