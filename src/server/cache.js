@@ -1,131 +1,143 @@
 import fs from "fs";
 import path from "path";
+import { Redis } from "@upstash/redis";
 
 export const CACHE_MIN_AGE_DAYS = 1;
-
-const CACHE_FILE = path.join(process.cwd(), ".sales-cache", "days.json");
-
-const SKU_CACHE_FILE = path.join(
-  process.cwd(),
-  ".sales-cache",
-  "suppliers.json",
-);
-
-let dayCache = null;
 
 export const isEntry = (entry) =>
   Boolean(entry) &&
   Number.isFinite(entry.count) &&
   Number.isFinite(entry.revenue);
 
-export function loadDayCache() {
-  if (!dayCache) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8"));
-      const valid =
-        parsed && typeof parsed === "object" && !Array.isArray(parsed);
-      dayCache = valid ? parsed : {};
-      // Days cached before Amazon FBA UK was split out still count FBA orders
-      // under Amazon UK, so drop that figure and let it be fetched again.
-      for (const day of Object.values(dayCache)) {
-        if (day?.amazon_uk && !day.amazon_fba_uk) delete day.amazon_uk;
+const isObject = (value) =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+// Hosted deployments lose local files between requests, so when Upstash Redis
+// is configured each cache lives there as a hash (one field per day / SKU).
+// Without it the cache falls back to files in .sales-cache, for local use.
+let redis;
+function getRedis() {
+  if (redis === undefined) {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    redis = url && token ? new Redis({ url, token }) : null;
+  }
+  return redis;
+}
+
+const HSET_BATCH = 200;
+
+// Each store remembers what it last read or wrote so that only changed
+// fields are sent back to Redis.
+function createStore({ name, file, reloadEachRequest = false, migrate }) {
+  const filePath = path.join(process.cwd(), ".sales-cache", file);
+  let data = null;
+  let written = new Map();
+
+  async function read() {
+    const client = getRedis();
+    if (client) {
+      try {
+        const hash = await client.hgetall(`sales:${name}`);
+        return isObject(hash) ? hash : {};
+      } catch {
+        return {};
       }
-    } catch {
-      dayCache = {};
     }
-  }
-  return dayCache;
-}
-
-function writeCacheFile(file, value) {
-  try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    const temp = `${file}.tmp`;
-    fs.writeFileSync(temp, JSON.stringify(value));
-    fs.renameSync(temp, file);
-  } catch {
-    // The cache is best-effort; the in-memory copy still works.
-  }
-}
-
-export function saveDayCache() {
-  writeCacheFile(CACHE_FILE, dayCache);
-}
-
-// SKU -> supplier lookups from Helm, kept on disk because they are slow to
-// fetch and Gatsby can reload the function between requests.
-let skuCache = null;
-
-export function loadSkuCache() {
-  if (!skuCache) {
     try {
-      const parsed = JSON.parse(fs.readFileSync(SKU_CACHE_FILE, "utf8"));
-      const valid =
-        parsed && typeof parsed === "object" && !Array.isArray(parsed);
-      skuCache = valid ? parsed : {};
+      const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      return isObject(parsed) ? parsed : {};
     } catch {
-      skuCache = {};
+      return {};
     }
   }
-  return skuCache;
+
+  async function load() {
+    // Files are read once per process; Redis is shared by every instance, so
+    // the day cache is read again on each request to see their writes.
+    if (data && !(reloadEachRequest && getRedis())) return data;
+    data = await read();
+    if (migrate) migrate(data);
+    written = new Map(
+      Object.entries(data).map(([field, value]) => [
+        field,
+        JSON.stringify(value),
+      ]),
+    );
+    return data;
+  }
+
+  async function save() {
+    if (!data) return;
+    const client = getRedis();
+    if (client) {
+      const changed = {};
+      for (const [field, value] of Object.entries(data)) {
+        const serialised = JSON.stringify(value);
+        if (written.get(field) !== serialised) {
+          changed[field] = value;
+          written.set(field, serialised);
+        }
+      }
+      const fields = Object.keys(changed);
+      try {
+        for (let i = 0; i < fields.length; i += HSET_BATCH) {
+          const batch = {};
+          for (const field of fields.slice(i, i + HSET_BATCH)) {
+            batch[field] = changed[field];
+          }
+          await client.hset(`sales:${name}`, batch);
+        }
+      } catch {
+        // The cache is best-effort; the in-memory copy still works.
+      }
+      return;
+    }
+    try {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      const temp = `${filePath}.tmp`;
+      fs.writeFileSync(temp, JSON.stringify(data));
+      fs.renameSync(temp, filePath);
+    } catch {
+      // The cache is best-effort; the in-memory copy still works.
+    }
+  }
+
+  return { load, save };
 }
 
-export function saveSkuCache() {
-  writeCacheFile(SKU_CACHE_FILE, skuCache);
-}
+// Days cached before Amazon FBA UK was split out still count FBA orders under
+// Amazon UK, so drop that figure and let it be fetched again.
+const days = createStore({
+  name: "days",
+  file: "days.json",
+  reloadEachRequest: true,
+  migrate: (cache) => {
+    for (const day of Object.values(cache)) {
+      if (day?.amazon_uk && !day.amazon_fba_uk) delete day.amazon_uk;
+    }
+  },
+});
+
+// SKU -> supplier lookups from Helm, which are slow to fetch.
+const skus = createStore({ name: "suppliers", file: "suppliers.json" });
 
 // SKU -> catalogue details (manufacturer, supplier, pack size) from
-// ChannelAdvisor, kept for the same reasons.
-const CATALOGUE_CACHE_FILE = path.join(
-  process.cwd(),
-  ".sales-cache",
-  "catalogue.json",
-);
-let catalogueCache = null;
-
-export function loadCatalogueCache() {
-  if (!catalogueCache) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(CATALOGUE_CACHE_FILE, "utf8"));
-      const valid =
-        parsed && typeof parsed === "object" && !Array.isArray(parsed);
-      catalogueCache = valid ? parsed : {};
-    } catch {
-      catalogueCache = {};
-    }
-  }
-  return catalogueCache;
-}
-
-export function saveCatalogueCache() {
-  writeCacheFile(CATALOGUE_CACHE_FILE, catalogueCache);
-}
+// ChannelAdvisor.
+const catalogue = createStore({ name: "catalogue", file: "catalogue.json" });
 
 // Per-day best seller totals for each channel. Days that are over never
 // change, so each is worked out once.
-const BEST_SELLER_CACHE_FILE = path.join(
-  process.cwd(),
-  ".sales-cache",
-  "bestsellers-v2.json",
-);
-let bestSellerCache = null;
+const bestSellers = createStore({
+  name: "bestsellers-v2",
+  file: "bestsellers-v2.json",
+});
 
-export function loadBestSellerCache() {
-  if (!bestSellerCache) {
-    try {
-      const parsed = JSON.parse(
-        fs.readFileSync(BEST_SELLER_CACHE_FILE, "utf8"),
-      );
-      const valid =
-        parsed && typeof parsed === "object" && !Array.isArray(parsed);
-      bestSellerCache = valid ? parsed : {};
-    } catch {
-      bestSellerCache = {};
-    }
-  }
-  return bestSellerCache;
-}
-
-export function saveBestSellerCache() {
-  writeCacheFile(BEST_SELLER_CACHE_FILE, bestSellerCache);
-}
+export const loadDayCache = days.load;
+export const saveDayCache = days.save;
+export const loadSkuCache = skus.load;
+export const saveSkuCache = skus.save;
+export const loadCatalogueCache = catalogue.load;
+export const saveCatalogueCache = catalogue.save;
+export const loadBestSellerCache = bestSellers.load;
+export const saveBestSellerCache = bestSellers.save;

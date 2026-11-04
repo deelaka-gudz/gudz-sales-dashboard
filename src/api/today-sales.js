@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     if (range.error) return res.status(400).json({ error: range.error });
     const { from, to } = range;
 
-    const cache = loadDayCache();
+    const cache = await loadDayCache();
     const cacheableUpTo = addDays(today, -CACHE_MIN_AGE_DAYS);
     const wanted = eachDay(from, to);
     const needed = findNeededDays({
@@ -78,7 +78,7 @@ export default async function handler(req, res) {
           }
         }
       }
-      if (cacheChanged) saveDayCache();
+      if (cacheChanged) await saveDayCache();
     }
 
     const channels = buildChannels({ wanted, fresh, cache, errors });

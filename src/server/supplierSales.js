@@ -374,7 +374,7 @@ export async function buildBestSellers(
   range,
   cacheableUpTo,
 ) {
-  const cache = loadBestSellerCache();
+  const cache = await loadBestSellerCache();
   const wanted = eachDay(range.from, range.to);
   const overall = createTally();
   const channels = {};
@@ -418,6 +418,6 @@ export async function buildBestSellers(
       }
     }),
   );
-  saveBestSellerCache();
+  await saveBestSellerCache();
   return { overall: overall.best(), channels };
 }

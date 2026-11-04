@@ -111,7 +111,7 @@ function createClient({ baseUrl, email, password }) {
 // Returns a Map of sku -> [{ supplier, pack }].
 export async function resolveSuppliers(helm, skus) {
   const now = Date.now();
-  const skuCache = loadSkuCache();
+  const skuCache = await loadSkuCache();
   const result = new Map();
   const unknown = [];
   for (const sku of new Set(skus)) {
@@ -170,6 +170,6 @@ export async function resolveSuppliers(helm, skus) {
       skuCache[sku] = { at: now, parts: value };
     result.set(sku, value);
   }
-  saveSkuCache();
+  await saveSkuCache();
   return result;
 }

@@ -13,7 +13,7 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 // names and a pack size of 1.
 export async function resolveCatalogue(account, creds, skus) {
   const now = Date.now();
-  const cache = loadCatalogueCache();
+  const cache = await loadCatalogueCache();
   const result = new Map();
   const unknown = [];
   for (const sku of new Set(skus)) {
@@ -49,6 +49,6 @@ export async function resolveCatalogue(account, creds, skus) {
     cache[`${account}|${sku}`] = { at: now, product: entry };
     result.set(sku, entry);
   }
-  saveCatalogueCache();
+  await saveCatalogueCache();
   return result;
 }
