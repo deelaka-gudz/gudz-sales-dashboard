@@ -18,8 +18,8 @@ const isObject = (value) =>
 let redis;
 function getRedis() {
   if (redis === undefined) {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const url = process.env.GATSBY_UPSTASH_REDIS_REST_URL;
+    const token = process.env.GATSBY_UPSTASH_REDIS_REST_TOKEN;
     redis = url && token ? new Redis({ url, token }) : null;
   }
   return redis;
