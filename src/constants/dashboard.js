@@ -17,5 +17,16 @@ export const CHANNEL_COLORS = {
   holland_barrett: "#16a34a",
 };
 
+export const CHANNEL_LABELS = {
+  amazon_uk: "Amazon UK",
+  amazon_ie: "Amazon Ireland",
+  shopify: "Shopify",
+  ebay_uk: "eBay UK",
+  temu_uk: "Temu UK",
+  tesco: "Tesco",
+  superdrug: "Superdrug",
+  holland_barrett: "Holland & Barrett",
+};
+
 export const REQUEST_TIMEOUT_MS = 90000;
 export const SKELETON_COUNT = 8;

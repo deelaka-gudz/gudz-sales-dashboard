@@ -1,0 +1,161 @@
+import * as React from "react";
+import { Link } from "gatsby";
+import "../styles/dashboard.css";
+import logo from "../images/gudz-logo.webp";
+import { BestKpi, bestLines } from "../components/BestSellers";
+import ChannelLogo from "../components/ChannelLogo";
+import Notice from "../components/Notice";
+import SectionHead from "../components/SectionHead";
+import SupplierPanel from "../components/SupplierPanel";
+import { CHANNEL_COLORS, CHANNEL_LABELS, RANGES } from "../constants/dashboard";
+import { useBestSellers } from "../hooks/useBestSellers";
+import { useSales } from "../hooks/useSales";
+import { eachDay } from "../server/dates";
+import { count, money } from "../utils/format";
+import { summarize } from "../utils/sales";
+
+// The address carries the channel and the same date query the dashboard used:
+// /channel/?channel=amazon_uk&range=last30 or &from=2026-01-01&to=2026-01-31.
+function readLocation(search) {
+  const params = new URLSearchParams(search);
+  const key = params.get("channel");
+  params.delete("channel");
+  const query = params.toString() || null;
+  const range = params.get("range");
+  const title = range
+    ? RANGES[range]?.button
+    : params.get("from") &&
+      (params.get("from") === params.get("to")
+        ? params.get("from")
+        : `${params.get("from")} to ${params.get("to")}`);
+  return { key, query, title };
+}
+
+const Stat = ({ label, value, sub }) => (
+  <div className="card">
+    <div className="kpi-label">{label}</div>
+    <div className="kpi-value">{value}</div>
+    {sub && <div className="kpi-sub">{sub}</div>}
+  </div>
+);
+
+const Overview = ({ tile, days, currencyTotal }) => {
+  const share = currencyTotal ? (tile.revenue / currencyTotal) * 100 : 0;
+  if (tile.error) {
+    return <Notice error>{tile.error}</Notice>;
+  }
+  return (
+    <>
+      <div className="kpis">
+        <Stat
+          label="Orders"
+          value={count(tile.orderCount)}
+          sub={
+            days > 1 &&
+            `Average ${(tile.orderCount / days).toLocaleString("en-GB", {
+              maximumFractionDigits: 1,
+            })} orders per day`
+          }
+        />
+        <Stat
+          label={`Revenue (${tile.currency})`}
+          value={money(tile.revenue, tile.currency)}
+          sub={`${share.toFixed(1)}% of ${tile.currency} revenue`}
+        />
+        {tile.parts?.map((part) => (
+          <Stat
+            key={part.label}
+            label={part.label}
+            value={money(part.revenue, part.currency)}
+            sub={`${count(part.orderCount)} orders`}
+          />
+        ))}
+      </div>
+    </>
+  );
+};
+
+const ChannelPage = ({ location }) => {
+  const { key, query, title } = readLocation(location?.search || "");
+  const label = CHANNEL_LABELS[key];
+  const channel = React.useMemo(() => ({ key, label }), [key, label]);
+  const valid = Boolean(label && query);
+  const best = useBestSellers(valid ? query : null);
+  const sales = useSales(valid ? query : null);
+  const tile = sales.data?.channels.find((c) => c.key === key);
+
+  return (
+    <main className="dash" style={{ "--channel": CHANNEL_COLORS[key] }}>
+      <Link to="/" className="back-link">
+        ← Back to dashboard
+      </Link>
+      {!valid ? (
+        <Notice error>
+          That channel or date range could not be found. Go back to the
+          dashboard and choose a channel.
+        </Notice>
+      ) : (
+        <>
+          <header className="channel-header">
+            <ChannelLogo channelKey={key} label={label} />
+            <div>
+              <h1>{label}</h1>
+              <p className="dash-sub">
+                {title}
+                {sales.data &&
+                  ` · ${
+                    sales.data.from === sales.data.to
+                      ? sales.data.from
+                      : `${sales.data.from} to ${sales.data.to}`
+                  }`}
+              </p>
+            </div>
+          </header>
+
+          <SectionHead title="Overview" />
+          {sales.error && (
+            <Notice error onRetry={sales.retry}>
+              Failed to load: {sales.error}
+            </Notice>
+          )}
+          {sales.loading && <div className="panel-loading">Loading...</div>}
+          {tile && (
+            <Overview
+              tile={tile}
+              days={eachDay(sales.data.from, sales.data.to).length}
+              currencyTotal={
+                summarize(sales.data.channels).revenueByCurrency[
+                  tile.currency
+                ] || 0
+              }
+            />
+          )}
+
+          <SectionHead title="Best sellers" />
+          <div className="kpis kpis-best channel-best-kpis">
+            {bestLines(best.data?.channels?.[key]).map((line) => (
+              <BestKpi
+                key={line.label}
+                {...line}
+                status={best}
+                best={best.data?.channels?.[key]}
+              />
+            ))}
+          </div>
+
+          <SectionHead title="Sales breakdown" />
+          <SupplierPanel channel={channel} query={query} />
+        </>
+      )}
+    </main>
+  );
+};
+
+export default ChannelPage;
+
+export const Head = () => (
+  <>
+    <title>Channel sales - Gudz Sales Dashboard</title>
+    <link rel="icon" href={logo} type="image/webp" />
+  </>
+);

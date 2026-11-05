@@ -736,3 +736,38 @@ body {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.channel-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.channel-header .channel-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+}
+
+.channel-header .channel-logo img {
+  width: 36px;
+  height: 36px;
+}
+
+.channel-best-kpis {
+  margin-top: 0;
+}

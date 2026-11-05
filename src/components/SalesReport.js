@@ -1,18 +1,20 @@
 import * as React from "react";
+import { navigate } from "gatsby";
 import ChannelGrid from "./ChannelGrid";
 import ChannelPie from "./ChannelPie";
 import KpiCards from "./KpiCards";
 import Notice from "./Notice";
 import SectionHead from "./SectionHead";
-import SupplierPanel from "./SupplierPanel";
 import { useBestSellers } from "../hooks/useBestSellers";
 import { summarize } from "../utils/sales";
 
 const SalesReport = ({ channels, days, query, onRetry }) => {
   const { totalOrders, revenueByCurrency, failed } = summarize(channels);
   const best = useBestSellers(query);
-  const [selected, setSelected] = React.useState(null);
-  const close = React.useCallback(() => setSelected(null), []);
+  const open = React.useCallback(
+    (channel) => navigate(`/channel/?channel=${channel.key}&${query}`),
+    [query],
+  );
   return (
     <>
       {failed.length > 0 && (
@@ -32,18 +34,8 @@ const SalesReport = ({ channels, days, query, onRetry }) => {
         channels={channels}
         revenueByCurrency={revenueByCurrency}
         days={days}
-        onSelect={setSelected}
-        selectedKey={selected?.key}
-        panel={
-          selected && (
-            <SupplierPanel
-              key={selected.key}
-              channel={selected}
-              query={query}
-              onClose={close}
-            />
-          )
-        }
+        best={best}
+        onSelect={open}
       />
       <SectionHead title="Share by channel" />
       <ChannelPie channels={channels} />

@@ -1,5 +1,4 @@
 import * as React from "react";
-import ChannelLogo from "./ChannelLogo";
 import Notice from "./Notice";
 import { CHANNEL_COLORS } from "../constants/dashboard";
 import { useSupplierSales } from "../hooks/useSupplierSales";
@@ -100,32 +99,18 @@ const SupplierSections = ({ data, view }) =>
     </section>
   ));
 
-const SupplierPanel = ({ channel, query, onClose }) => {
+const SupplierPanel = ({ channel, query }) => {
   const { data, error, loading, retry } = useSupplierSales(channel.key, query);
   const [view, setView] = React.useState("suppliers");
 
-  const ref = React.useRef(null);
-
-  // Bring the expanded panel into view when a channel is chosen.
-  React.useEffect(() => {
-    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [channel.key]);
-
   return (
     <section
-      ref={ref}
       className="panel card"
       aria-label={`${channel.label} sales by ${VIEWS[view].noun}`}
       style={{ "--channel": CHANNEL_COLORS[channel.key] }}
     >
       <div className="panel-head">
-        <div className="channel-name">
-          <ChannelLogo channelKey={channel.key} label={channel.label} />
-          {channel.label} by {VIEWS[view].noun}
-        </div>
-        <button type="button" className="panel-close" onClick={onClose}>
-          Close
-        </button>
+        <div className="channel-name">Sales by {VIEWS[view].noun}</div>
       </div>
       <div className="segmented panel-toggle">
         {Object.entries(VIEWS).map(([key, { button }]) => (
