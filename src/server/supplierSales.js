@@ -40,6 +40,7 @@ async function caSections({ channels, creds, since, until }) {
   });
   return channels.map((channel) => ({
     label: channel.group ? channel.groupLabel : null,
+    segment: channel.segment,
     lines: orders
       .filter((order) => channelOwnsOrder(channel, order))
       .flatMap((order) =>
@@ -265,8 +266,9 @@ async function resolveSkus(channelKey, credentials, skus) {
 // { sections: [{ label, lines }], infoOf(line) }.
 async function loadChannel(channelKey, credentials, range) {
   const sections = (await fetchSections(channelKey, credentials, range)).map(
-    ({ label, lines }) => ({
+    ({ label, segment, lines }) => ({
       label,
+      segment,
       lines: lines.filter((line) => line.sku && line.quantity > 0),
     }),
   );
@@ -381,12 +383,19 @@ export async function buildBestSellers(
   await Promise.all(
     channelKeys.map(async (key) => {
       try {
+        // The channel's own figures include every order; what counts towards
+        // the overall best sellers leaves out wholesale. A day only keeps a
+        // separate `overallKey` entry when the two differ.
+        const overallKey = `${key}:overall`;
         const tally = createTally();
+        const overallTally = createTally();
         const needed = new Set();
         for (const day of wanted) {
           const cached = day <= cacheableUpTo && cache[day]?.[key];
-          if (cached) tally.merge(cached);
-          else needed.add(day);
+          if (cached) {
+            tally.merge(cached);
+            overallTally.merge(cache[day][overallKey] || cached);
+          } else needed.add(day);
         }
         if (needed.size) {
           const first = [...needed][0];
@@ -397,21 +406,35 @@ export async function buildBestSellers(
             since: londonDayStartUtc(first),
             until: londonDayStartUtc(addDays(last, 1)),
           });
-          const lines = sections.flatMap((section) => section.lines);
-          for (const day of needed) {
+          const snapshotOf = (day, list) => {
             const dayTally = createTally();
             dayTally.add(
-              lines.filter((line) => line.day === day),
+              list.filter((line) => line.day === day),
               infoOf,
             );
-            const snapshot = dayTally.snapshot();
+            return dayTally.snapshot();
+          };
+          const lines = sections.flatMap((section) => section.lines);
+          const retail = sections.some((s) => s.segment === "wholesale")
+            ? sections
+                .filter((s) => s.segment !== "wholesale")
+                .flatMap((s) => s.lines)
+            : null;
+          for (const day of needed) {
+            const snapshot = snapshotOf(day, lines);
+            const overallSnapshot = retail ? snapshotOf(day, retail) : snapshot;
             tally.merge(snapshot);
+            overallTally.merge(overallSnapshot);
             if (day <= cacheableUpTo) {
-              cache[day] = { ...cache[day], [key]: snapshot };
+              cache[day] = {
+                ...cache[day],
+                [key]: snapshot,
+                ...(retail && { [overallKey]: overallSnapshot }),
+              };
             }
           }
         }
-        overall.merge(tally.snapshot());
+        overall.merge(overallTally.snapshot());
         channels[key] = tally.best();
       } catch (error) {
         channels[key] = { error: error.message || "Could not be loaded" };

@@ -126,11 +126,12 @@ const skus = createStore({ name: "suppliers", file: "suppliers.json" });
 // ChannelAdvisor.
 const catalogue = createStore({ name: "catalogue", file: "catalogue.json" });
 
-// Per-day best seller totals for each channel. Days that are over never
-// change, so each is worked out once.
+// Per-day best seller totals for each channel, plus an "<channel>:overall"
+// entry where wholesale is left out. Days that are over never change, so each
+// is worked out once.
 const bestSellers = createStore({
-  name: "bestsellers-v2",
-  file: "bestsellers-v2.json",
+  name: "bestsellers-v4",
+  file: "bestsellers-v4.json",
 });
 
 export const loadDayCache = days.load;
