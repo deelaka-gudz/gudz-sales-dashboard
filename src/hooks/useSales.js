@@ -5,7 +5,7 @@ import { addDays, eachDay, londonToday } from "../server/dates";
 // Long ranges are loaded a few days at a time so each request finishes before
 // the host's function time limit. Days already cached are quick.
 const CHUNK_DAYS = 5;
-const CHUNK_CONCURRENCY = 3;
+const CHUNK_CONCURRENCY = 1;
 
 const TIMEOUT = "timeout";
 

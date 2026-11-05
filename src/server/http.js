@@ -1,6 +1,8 @@
 const REQUEST_TIMEOUT_MS = 20000;
 const MAX_ATTEMPTS = 3;
 const MAX_RETRY_WAIT_MS = 5000;
+const MAX_RATE_LIMIT_ATTEMPTS = 5;
+const MAX_RATE_LIMIT_WAIT_MS = 15000;
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,7 +31,9 @@ export async function requestJson(url, options, label) {
       });
     } catch (error) {
       if (lastAttempt) {
-        throw new Error(`${label} could not be reached (${networkReason(error)})`);
+        throw new Error(
+          `${label} could not be reached (${networkReason(error)})`,
+        );
       }
       await sleep(backoff(attempt));
       continue;
@@ -43,10 +47,18 @@ export async function requestJson(url, options, label) {
       }
     }
 
-    if (RETRYABLE_STATUS.has(response.status) && !lastAttempt) {
+    // Rate limits last far longer than other failures, so they get more
+    // attempts and are waited out for as long as the server asks.
+    const rateLimited = response.status === 429;
+    if (
+      RETRYABLE_STATUS.has(response.status) &&
+      attempt < (rateLimited ? MAX_RATE_LIMIT_ATTEMPTS : MAX_ATTEMPTS)
+    ) {
       const retryAfter = Number(response.headers.get("retry-after"));
-      const wait = retryAfter > 0 ? retryAfter * 1000 : backoff(attempt);
-      await sleep(Math.min(wait, MAX_RETRY_WAIT_MS));
+      const cap = rateLimited ? MAX_RATE_LIMIT_WAIT_MS : MAX_RETRY_WAIT_MS;
+      const fallback = rateLimited ? 3000 * attempt : backoff(attempt);
+      const wait = retryAfter > 0 ? retryAfter * 1000 : fallback;
+      await sleep(Math.min(wait, cap));
       continue;
     }
 

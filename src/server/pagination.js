@@ -1,4 +1,4 @@
-const PAGE_CONCURRENCY = 5;
+const PAGE_CONCURRENCY = 2;
 const MAX_PAGES = 200;
 
 const tooManyOrders = (total) =>
