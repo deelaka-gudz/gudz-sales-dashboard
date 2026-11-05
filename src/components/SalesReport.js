@@ -8,7 +8,7 @@ import SupplierPanel from "./SupplierPanel";
 import { useBestSellers } from "../hooks/useBestSellers";
 import { summarize } from "../utils/sales";
 
-const SalesReport = ({ channels, query, onRetry }) => {
+const SalesReport = ({ channels, days, query, onRetry }) => {
   const { totalOrders, revenueByCurrency, failed } = summarize(channels);
   const best = useBestSellers(query);
   const [selected, setSelected] = React.useState(null);
@@ -31,6 +31,7 @@ const SalesReport = ({ channels, query, onRetry }) => {
       <ChannelGrid
         channels={channels}
         revenueByCurrency={revenueByCurrency}
+        days={days}
         onSelect={setSelected}
         selectedKey={selected?.key}
         panel={

@@ -10,6 +10,7 @@ import SectionHead from "../components/SectionHead";
 import SkeletonGrid from "../components/SkeletonGrid";
 import { RANGES } from "../constants/dashboard";
 import { useSales } from "../hooks/useSales";
+import { eachDay } from "../server/dates";
 
 const buildQuery = (range, custom, date) => {
   if (range === "date") return date ? `from=${date}&to=${date}` : null;
@@ -51,7 +52,12 @@ const IndexPage = () => {
       )}
       {loading && <SkeletonGrid />}
       {data && (
-        <SalesReport channels={data.channels} query={query} onRetry={retry} />
+        <SalesReport
+          channels={data.channels}
+          days={eachDay(data.from, data.to).length}
+          query={query}
+          onRetry={retry}
+        />
       )}
     </main>
   );

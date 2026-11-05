@@ -13,6 +13,7 @@ const columnCount = (grid) =>
 const ChannelGrid = ({
   channels,
   revenueByCurrency,
+  days,
   onSelect,
   selectedKey,
   panel,
@@ -39,6 +40,7 @@ const ChannelGrid = ({
           {index !== selectedIndex && (
             <ChannelCard
               channel={channel}
+              days={days}
               onSelect={onSelect}
               currencyTotal={revenueByCurrency[channel.currency] || 0}
             />

@@ -3,7 +3,7 @@ import ChannelLogo from "./ChannelLogo";
 import { CHANNEL_COLORS } from "../constants/dashboard";
 import { count, money } from "../utils/format";
 
-const ChannelStats = ({ channel, currencyTotal }) => {
+const ChannelStats = ({ channel, currencyTotal, days }) => {
   const share = currencyTotal ? (channel.revenue / currencyTotal) * 100 : 0;
   return (
     <>
@@ -11,6 +11,15 @@ const ChannelStats = ({ channel, currencyTotal }) => {
         {count(channel.orderCount)}
         <small>orders</small>
       </div>
+      {days > 1 && (
+        <div className="share-label">
+          Average{" "}
+          {(channel.orderCount / days).toLocaleString("en-GB", {
+            maximumFractionDigits: 1,
+          })}{" "}
+          orders per day
+        </div>
+      )}
       <div className="channel-revenue">
         {money(channel.revenue, channel.currency)}
       </div>
@@ -38,7 +47,7 @@ const ChannelParts = ({ parts }) => (
   </div>
 );
 
-const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
+const ChannelCard = ({ channel, currencyTotal, days, onSelect }) => {
   const clickable = !channel.error && onSelect;
   const onKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -68,7 +77,11 @@ const ChannelCard = ({ channel, currencyTotal, onSelect }) => {
           <span>{channel.error}</span>
         </div>
       ) : (
-        <ChannelStats channel={channel} currencyTotal={currencyTotal} />
+        <ChannelStats
+          channel={channel}
+          currencyTotal={currencyTotal}
+          days={days}
+        />
       )}
       {!channel.error && channel.parts && (
         <ChannelParts parts={channel.parts} />
