@@ -1,9 +1,10 @@
 import * as React from "react";
 import { REQUEST_TIMEOUT_MS } from "../constants/dashboard";
+import { CHUNK_DAYS, resolveDays } from "./useSales";
 
 const TIMEOUT = "timeout";
 
-async function readBestSellers(response) {
+async function readBestSellers(response, warming = false) {
   let body;
   try {
     body = await response.json();
@@ -13,7 +14,7 @@ async function readBestSellers(response) {
     );
   }
   if (!response.ok) throw new Error(body.error || response.statusText);
-  if (!body.channels) {
+  if (!warming && !body.channels) {
     throw new Error("The server response was missing best seller data");
   }
   return body;
@@ -27,6 +28,21 @@ function describeError(error, signal) {
   return error.message;
 }
 
+// A long range is worked out a few days at a time, one request after another,
+// so each finishes within the host's time limit and its days are cached even
+// if a later one fails. The full request afterwards then finds almost
+// everything cached.
+async function warmUp(query, signal, arm) {
+  const days = resolveDays(query);
+  if (!days) return;
+  for (let i = 0; i < days.length; i += CHUNK_DAYS) {
+    arm();
+    const chunk = days.slice(i, i + CHUNK_DAYS);
+    const url = `/api/best-sellers?from=${chunk[0]}&to=${chunk[chunk.length - 1]}&warm=1`;
+    await readBestSellers(await fetch(url, { signal }), true);
+  }
+}
+
 // Best sellers read every order line, so they load separately from the sales
 // figures and the page doesn't wait for them.
 export function useBestSellers(query) {
@@ -37,11 +53,20 @@ export function useBestSellers(query) {
     setState({ data: null, error: null });
 
     const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(TIMEOUT),
-      REQUEST_TIMEOUT_MS,
-    );
-    fetch(`/api/best-sellers?${query}`, { signal: controller.signal })
+    // The time limit applies to each request, not to the whole chunked load.
+    let timeout;
+    const arm = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => controller.abort(TIMEOUT), REQUEST_TIMEOUT_MS);
+    };
+    arm();
+    warmUp(query, controller.signal, arm)
+      .then(() => {
+        arm();
+        return fetch(`/api/best-sellers?${query}`, {
+          signal: controller.signal,
+        });
+      })
       .then(readBestSellers)
       .then((data) => setState({ data, error: null }))
       .catch((err) => {

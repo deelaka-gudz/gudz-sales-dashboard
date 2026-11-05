@@ -32,6 +32,10 @@ export default async function handler(req, res) {
       { from, to },
       addDays(today, -CACHE_MIN_AGE_DAYS),
     );
+    // A warm-up only fills the cache, so the small reply saves sending data
+    // the caller will ask for again.
+    if (req.query?.warm)
+      return res.status(200).json({ from, to, warmed: true });
     res.status(200).json({ from, to, ...best });
   } catch (error) {
     res.status(500).json({ error: error.message || "Unexpected server error" });

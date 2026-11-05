@@ -4,7 +4,7 @@ import { addDays, eachDay, londonToday } from "../server/dates";
 
 // Long ranges are loaded a few days at a time so each request finishes before
 // the host's function time limit. Days already cached are quick.
-const CHUNK_DAYS = 5;
+export const CHUNK_DAYS = 5;
 const CHUNK_CONCURRENCY = 1;
 
 const TIMEOUT = "timeout";
@@ -26,7 +26,7 @@ async function readSales(response) {
 }
 
 // Works out the days a query covers, or null when it is a single day.
-function resolveDays(query) {
+export function resolveDays(query) {
   const params = new URLSearchParams(query);
   const today = londonToday();
   let from = params.get("from");
